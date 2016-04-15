@@ -1,0 +1,75 @@
+= Dependency Analysis Plugin
+:latestRevision: 1.0.0
+:toc:
+
+== Summary
+This plugin identifies unused compile dependencies of a project and it detects duplicate classes in dependencies.
+A short result is written to the console and a detailed result is written to a html report.
+
+== Usage
+To apply the Dependency Analysis Plugin to your projects, add the following in your build script:
+
+[source,groovy,subs="attributes"]
+----
+plugins {
+    id 'com.intershop.gradle.dependencyanalysis' version '{latestRevision}'
+}
+
+dependencyAnalysis {
+  reportsDir = file('reports')
+  failOnErrors = true
+}
+----
+
+== Tasks
+The Intershop Dependency Analysis plugin adds a task `dependencyAnalysis` to the project. Since this is a verification task, the task `'check'` dependents on it.
+
+[cols="25%,30%,45%", width="95%, options="header"]
+|===
+|Task name  |Type             |Description
+|dependencyAnalysis  | com.intershop.gradle.analysis.tasks.DependencyAnalysisTask | This task runs the dependency validation.
+|===
+
+== Project Extension 'dependencyAnalysis'
+This plugin adds an extension *`dependencyAnalysis`* to the project. This extension contains all plugin configurations.
+
+=== Convention properties
+[cols="17%,17%,17%,49%", width="90%, options="header"]
+|===
+|Property       | Type                      | Default value | Description
+
+|*reportsDir*           |`File`       |`<Base report dir>/dependencyAnalysis` | Base dir for the reporting file.
+|*failOnErrors*         |`boolean`    |`true`  | If this property is true, the build will fail if errors occur during verification.
+|*failOnWarnings*       |`boolean`    |`false` | If this property is true, the build will fail if warnings occur during verification.
+|*enabled*              |`boolean`    |`true`  | If this property is true, the task is added and the project will be verified.
+|*sourceset*            |`String`     |`main`  | The name of the source set which is used for this check.
+|===
+
+Please make sure that only compile dependencies can be correct evaluated.
+
+== Example Output
+
+This is an example output for 4 warnings, 4 errors and 2 dependencies with duplicate classes.
+
+[source,groovy,subs="attributes"]
+----
+== Dependency Report ==
+  Warnings: 8
+  Errors:   4
+
+Duplicate Dependencies
+  org.ow2.asm:asm:5.1 (C:\Users\user\.gradle\caches\modules-2\files-2.1\org.ow2.asm\asm\5.1\5ef31c4fe953b1fd00b8a88fa1d6820e8785bb45\asm-5.1.jar)
+  org.ow2.asm:asm-all:4.2 (C:\Users\user\.gradle\caches\modules-2\files-2.1\org.ow2.asm\asm-all\4.2\7f7277e5b8002226ebfc8b861c775da8f6a55afd\asm-all-4.2.jar)
+
+Please review E:\project\build\reports\dependencyAnalysis\dependency-report.html for more information
+----
+
+== License
+
+Copyright 2014-2016 Intershop Communications.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
