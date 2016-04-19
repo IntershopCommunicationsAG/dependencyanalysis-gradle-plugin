@@ -102,7 +102,9 @@ class DependencyAnalysisTask extends DefaultTask {
                 artifacts.each {
                     List<Artifact> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
                     if(il.size() > 0) {
+                        it.dublicatedClasses.addAll(il)
                         a.dublicatedClasses.addAll(il)
+                        it.dublicatedArtifacts.add(a)
                         a.dublicatedArtifacts.add(it)
                     }
                 }
