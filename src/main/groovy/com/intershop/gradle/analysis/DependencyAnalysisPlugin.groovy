@@ -44,7 +44,7 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
 
 		project.afterEvaluate {
 			if(extension.isEnabled()) {
-				JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention.class)
+				JavaPluginConvention javaConvention = project.convention.findPlugin(JavaPluginConvention.class)
 				if(javaConvention != null) {
                     String sourceSetName = extension.getSourceset()
                     if(! sourceSetName) {

@@ -121,7 +121,22 @@ public class HTMLReporter {
                             duplicateUsed.each {  Artifact a ->
 								tr {
 									td { span(class: 'error', "Used, but contains duplicates") }
-									td "${a.module}:${a.version}"
+									String list = ''
+									a.dublicatedArtifacts.each {Artifact ad ->
+										list += list ? ';' : ''
+										list += "${ad.module}:${ad.version}"
+									}
+									td {
+										p("${a.module}:${a.version} (see also ${list})")
+										p('Duplicate classes')
+										ul {
+											a.dublicatedClasses.each{ classname ->
+												li {
+													mkp.yield classname
+												}
+											}
+										}
+									}
 								}
 							}
                             unused.findAll { it.transitive == 0 && it.dublicatedArtifacts.size() == 0 }.each {  Artifact a ->
@@ -133,7 +148,22 @@ public class HTMLReporter {
                             unused.findAll { it.transitive == 0 && it.dublicatedArtifacts.size() > 0 }.each {  Artifact a ->
                                 tr {
                                     td { span(class: 'error', "Not used (duplicate classes)") }
-                                    td "${a.module}:${a.version}"
+									String list = ''
+									a.dublicatedArtifacts.each {Artifact ad ->
+										list += list ? ';' : ''
+										list += "${ad.module}:${ad.version}"
+									}
+                                    td {
+										p("${a.module}:${a.version} (see also ${list})")
+										p('Duplicate classes')
+										ul {
+											a.dublicatedClasses.each{ classname ->
+												li {
+													mkp.yield classname
+												}
+											}
+										}
+									}
                                 }
                             }
 
