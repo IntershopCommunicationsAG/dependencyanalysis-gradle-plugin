@@ -283,4 +283,35 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
         ! tasksResult.output.contains(':test_new:dependencyAnalysis')
 			
 	}
+
+	@Unroll
+	def "analyse for project without java"() {
+		given:
+		buildFile << """
+            plugins {
+                id 'com.intershop.gradle.dependencyanalysis'
+            }
+
+			version = '1.0.0.0'
+			group = 'com.test.gradle'
+		""".stripIndent()
+
+		when:
+		List<String> tasksArgs = ['build', '-s']
+
+		def tasksResult = getPreparedGradleRunner()
+				.withArguments(tasksArgs)
+				.build()
+
+		then:
+		! new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+		! tasksResult.output.contains('Warnings:')
+		! tasksResult.output.contains('Errors:')
+		! tasksResult.output.contains('Warnings:')
+		! tasksResult.output.contains('Errors:')
+
+		! tasksResult.output.contains(':test_new:dependencyAnalysis')
+
+	}
 }
