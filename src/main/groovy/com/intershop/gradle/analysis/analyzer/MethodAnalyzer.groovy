@@ -19,6 +19,8 @@ import com.intershop.gradle.analysis.utils.ClassNameCollector
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.objectweb.asm.*
+import org.objectweb.asm.signature.SignatureReader
+import org.objectweb.asm.signature.SignatureVisitor
 
 /**
  * Analyzer for methods
@@ -37,7 +39,7 @@ class MethodAnalyzer extends MethodVisitor {
 	
 	@Override
 	public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-		return new AnnotationAnalyzer(cc, desc, visible);
+		return new AnnotationAnalyzer(cc, desc, visible)
 	}
 
 	@Override
@@ -46,28 +48,24 @@ class MethodAnalyzer extends MethodVisitor {
 	}
 
 	@Override
-	public void visitAttribute(Attribute arg0) {
+	public void visitAttribute(Attribute attr) { }
+
+	@Override
+	public void visitCode() { }
+
+	@Override
+	public void visitEnd() { }
+
+	@Override
+	public void visitFieldInsn( final int opcode, final String owner, final String name, final String desc ) {
+        cc.addName(owner)
 	}
 
 	@Override
-	public void visitCode() {
-	}
+	public void visitFrame(int arg0, int arg1, Object[] arg2, int arg3, Object[] arg4) { }
 
 	@Override
-	public void visitEnd() {
-	}
-
-	@Override
-	public void visitFieldInsn(int arg0, String arg1, String arg2, String arg3) {
-	}
-
-	@Override
-	public void visitFrame(int arg0, int arg1, Object[] arg2, int arg3, Object[] arg4) {
-	}
-
-	@Override
-	public void visitIincInsn(int arg0, int arg1) {
-	}
+	public void visitIincInsn(int arg0, int arg1) {  }
 
 	@Override
 	public void visitInsn(int arg0) {
@@ -78,39 +76,49 @@ class MethodAnalyzer extends MethodVisitor {
 	}
 
 	@Override
-	public void visitJumpInsn(int arg0, Label arg1) {
+	public void visitJumpInsn(int arg0, Label arg1) { }
+
+	@Override
+	public void visitLabel(Label arg0) { }
+
+	@Override
+	public void visitLdcInsn(Object cst) {
+        if ( cst instanceof Type ) {
+            cc.addName(((Type) cst ).toString())
+        }
 	}
 
 	@Override
-	public void visitLabel(Label arg0) {
-	}
+	public void visitLineNumber(int line, Label start) {
+        log.debug('visitLineNumber: $ # $ ', line, start)
+    }
 
 	@Override
-	public void visitLdcInsn(Object arg0) {
-	}
+	public void visitLocalVariable( final String name, final String desc, final String signature, final Label start,
+                                    final Label end, final int index ) {
+        if ( signature == null ) {
+            cc.addName( desc )
+        } else {
+            addTypeSignature( signature )
+        }
+    }
 
 	@Override
-	public void visitLineNumber(int line, Label start) {}
-
-	@Override
-	public void visitLocalVariable(String arg0, String arg1, String arg2, Label arg3, Label arg4, int arg5) {
-	}
-
-	@Override
-	public void visitLookupSwitchInsn(Label arg0, int[] arg1, Label[] arg2) {
-	}
+	public void visitLookupSwitchInsn(Label arg0, int[] arg1, Label[] arg2) { }
 
 	@Override
 	public void visitMaxs(int arg0, int arg1) {
 	}
 
 	@Override
-	public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
+	public void visitMethodInsn( int opcode, String owner, String name, String desc, boolean itf ) {
+        cc.addName(owner)
 	}
 
 	@Override
-	public void visitMultiANewArrayInsn(String arg0, int arg1) {
-	}
+	public void visitMultiANewArrayInsn( final String desc, final int dims ) {
+        cc.addName( desc )
+    }
 
 	@Override
 	public AnnotationVisitor visitParameterAnnotation(int arg0, String arg1, boolean arg2) {
@@ -118,19 +126,25 @@ class MethodAnalyzer extends MethodVisitor {
 	}
 
 	@Override
-	public void visitTableSwitchInsn(int arg0, int arg1, Label arg2, Label... arg3) {
+	public void visitTableSwitchInsn(int arg0, int arg1, Label arg2, Label... arg3) { }
+
+	@Override
+	public void visitTryCatchBlock( final Label start, final Label end, final Label handler, final String type ) {
+        cc.addName(type)
 	}
 
 	@Override
-	public void visitTryCatchBlock(Label arg0, Label arg1, Label arg2, String arg3) {
-	}
+    public void visitTypeInsn( final int opcode, final String desc ) {
+        cc.addName(desc)
+    }
 
 	@Override
-	public void visitTypeInsn(int arg0, String arg1) {
-	}
+	public void visitVarInsn(int arg0, int arg1) { }
 
-	@Override
-	public void visitVarInsn(int arg0, int arg1) {
-	}
+    private void addTypeSignature( String signature ) {
+        if ( signature != null ) {
+            new SignatureReader( signature ).acceptType( (SignatureVisitor)new SignatureVisitorAnalyzer(cc) )
+        }
+    }
 
 }

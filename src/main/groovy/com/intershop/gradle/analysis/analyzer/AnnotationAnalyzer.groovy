@@ -26,6 +26,8 @@ import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
+import org.objectweb.asm.signature.SignatureReader
+import org.objectweb.asm.signature.SignatureVisitor
 
 @CompileStatic
 @Slf4j
@@ -46,7 +48,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
 
         private ClassNameCollector cc
 
-        ClassAnalyzer() {
+        ClassAnalyzer(ClassNameCollector cc) {
             super(Opcodes.ASM5)
             this.cc = cc
         }
@@ -54,11 +56,11 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
             ClassAnalyzer.log.info('class {} extends {} implements {}' , name, superName, interfaces)
 
-            cc = new ClassNameCollector()
-
             if (signature == null) {
                 cc.addName( superName )
                 cc.addNames( interfaces )
+            } else {
+                addTypeSignature(signature)
             }
         }
 
@@ -68,13 +70,13 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         }
 
         @Override
-        public void visitAttribute(Attribute attribute) {}
+        public void visitAttribute(Attribute attribute) { }
 
         @Override
-        public void visitInnerClass(String name, String outerName, String innerName, int access) {}
+        public void visitInnerClass(String name, String outerName, String innerName, int access) { }
 
         @Override
-        public void visitSource(String source, String debug) {}
+        public void visitSource(String source, String debug) { }
 
         @Override
         public void visitOuterClass(String owner, String name, String desc) {}
@@ -106,8 +108,10 @@ class AnnotationAnalyzer extends AnnotationVisitor {
             ClassAnalyzer.log.info("Finished")
         }
 
-        public Set<String> getClassDependencies() {
-            return cc.getClasses()
+        private void addTypeSignature( String signature ) {
+            if ( signature != null ) {
+                new SignatureReader( signature ).acceptType( (SignatureVisitor)new SignatureVisitorAnalyzer(cc) )
+            }
         }
     }
 }
