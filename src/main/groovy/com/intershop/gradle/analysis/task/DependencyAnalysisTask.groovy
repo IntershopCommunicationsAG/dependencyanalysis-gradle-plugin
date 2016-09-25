@@ -29,8 +29,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.logging.StyledTextOutput
-import org.gradle.logging.StyledTextOutputFactory
+
 /**
  * This is task implementation of this task.
  */
@@ -150,21 +149,33 @@ class DependencyAnalysisTask extends DefaultTask {
 		}
 		
 		if((errors > 0 || warnings > 0) && ! project.dependencyAnalysis.getFailOnErrors() && ! project.dependencyAnalysis.getFailOnWarnings()) {
-            StyledTextOutput output = services.get(StyledTextOutputFactory).create('API Check Report')
-            output.println()
-            output.withStyle(org.gradle.logging.StyledTextOutput.Style.Info).println('== Dependency Report ==')
-            output.println("  Warnings: ${warnings}")
-            output.println("  Errors:   ${errors}")
-            if(duplicates.size() > 0) {
-                output.println()
-                output.println("Duplicate Dependencies")
-                duplicates.each {
-                    output.println("  ${it} (${it.getAbsoluteFile()})")
-                }
-                output.println()
+
+            String duplicatesStr = ''
+            duplicates.each {
+                "       ${it} (${it.getAbsoluteFile()})" + '/n'
             }
-            output.withStyle(org.gradle.logging.StyledTextOutput.Style.Description).println("Please review ${htmlReport.canonicalPath} for more information")
-            output.println()
+            duplicatesStr = duplicatesStr ?: 'no duplicate dependencies'
+            String report = """
+                -----------------------------------------------
+                  Dependency Report
+                -----------------------------------------------
+
+                     Warnings: ${warnings}
+                     Errors:   ${errors}
+
+                     Duplicate Dependencies
+                     ------------------------
+                     ${duplicatesStr}
+
+                ---------------------------------------------------------------------------------
+                  Please review
+                    ${htmlReport.canonicalPath}
+                  for more information
+                ---------------------------------------------------------------------------------
+
+            """.stripIndent()
+
+            println report
 		}
 	}
 	

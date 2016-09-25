@@ -15,9 +15,10 @@
  */
 package com.intershop.gradle.analysis.model
 
-
-import com.intershop.gradle.analysis.utils.ReadClassException
 import com.intershop.gradle.analysis.analyzer.AnnotationAnalyzer
+import com.intershop.gradle.analysis.analyzer.ConstantPoolParser
+import com.intershop.gradle.analysis.utils.ClassNameCollector
+import com.intershop.gradle.analysis.utils.ReadClassException
 import groovy.util.logging.Slf4j
 import org.objectweb.asm.ClassReader
 
@@ -71,9 +72,18 @@ class ProjectArtifact extends Artifact {
 		
 		try {
 			ClassReader cr = new ClassReader(data)
-			AnnotationAnalyzer.ClassAnalyzer da = new AnnotationAnalyzer.ClassAnalyzer()
+            ClassNameCollector cc = new ClassNameCollector()
+
+			final Set<String> constantPoolClassRefs = ConstantPoolParser.getConstantPoolClassReferences( cr.b )
+            constantPoolClassRefs.each {
+                cc.addName(it)
+            }
+
+			AnnotationAnalyzer.ClassAnalyzer da = new AnnotationAnalyzer.ClassAnalyzer(cc)
 			cr.accept(da, 0)
-			return da.getClassDependencies()
+
+			return cc.getClasses()
+
 		} catch (RuntimeException exc) {
 			exc.printStackTrace()
 			throw new ReadClassException("Error occurred while loading class ${name}:${exc.toString()}", exc)

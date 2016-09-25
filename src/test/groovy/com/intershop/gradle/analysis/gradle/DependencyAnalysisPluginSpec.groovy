@@ -41,8 +41,8 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 			version = '1.0.0.0'
 			group = 'com.test.gradle'
 
-			sourceCompatibility = 1.7
-			targetCompatibility = 1.7
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
 
 			repositories {
                 jcenter()
@@ -52,7 +52,14 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 				compile 'com.google.code.findbugs:annotations:3.0.0'
 				compile 'javax.persistence:persistence-api:1.0.2'
 				compile 'javax.validation:validation-api:1.0.0.GA'
+				compile 'org.slf4j:slf4j-api:1.7.21'
+				compile 'commons-logging:commons-logging:1.1.1'
+
 				compile 'org.ow2.asm:asm:5.1'
+				compile 'junit:junit:4.12'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
 			}
 		""".stripIndent()
 
@@ -71,7 +78,7 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
         ! tasksResult.output.contains('Warnings:')
         ! tasksResult.output.contains('Errors:')
 	}
-	
+
 	@Unroll
 	def "analyse for project not failOnErrors"() {
 		given:
@@ -81,11 +88,11 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
                 id 'com.intershop.gradle.dependencyanalysis'
             }
 
-			version = '1.0.0.0'
+			version = '1.0.0'
 			group = 'com.test.gradle'
 
-			sourceCompatibility = 1.7
-			targetCompatibility = 1.7
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
 
             repositories {
                 jcenter()
@@ -99,10 +106,15 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 				compile 'com.google.code.findbugs:annotations:3.0.0'
 				compile 'javax.persistence:persistence-api:1.0.2'
 				compile 'javax.validation:validation-api:1.0.0.GA'
+				compile 'org.slf4j:slf4j-api:1.7.21'
+				compile 'junit:junit:4.12'
+				compile 'commons-logging:commons-logging:1.1.1'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
 
 				//not necessary for compilation
 				compile 'net.sf.ehcache:ehcache-core:2.6.11'
-				compile 'org.springframework:spring-web:4.1.6.RELEASE'
 
 				// duplicate classes
 				compile 'org.ow2.asm:asm-all:4.2'
@@ -120,8 +132,8 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
 
-        tasksResult.output.contains('Warnings: 8')
-        tasksResult.output.contains('Errors:   4')
+        tasksResult.output.contains('Warnings: 1')
+        tasksResult.output.contains('Errors:   3')
 	}
 
     @Unroll
@@ -135,11 +147,11 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
                 id 'com.intershop.gradle.dependencyanalysis'
             }
 
-			version = '1.0.0.0'
+			version = '1.0.0'
 			group = 'com.test.gradle'
 
-			sourceCompatibility = 1.7
-			targetCompatibility = 1.7
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
 
             repositories {
                 jcenter()
@@ -153,6 +165,11 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 				compile 'com.google.code.findbugs:annotations:3.0.0'
 				compile 'javax.persistence:persistence-api:1.0.2'
 				compile 'javax.validation:validation-api:1.0.0.GA'
+				compile 'org.slf4j:slf4j-api:1.7.21'
+				compile 'junit:junit:4.12'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
 
 				//not necessary for compilation
 				compile 'net.sf.ehcache:ehcache-core:2.6.11'
@@ -188,11 +205,11 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
                 id 'com.intershop.gradle.dependencyanalysis'
             }
 
-			version = '1.0.0.0'
+			version = '1.0.0'
 			group = 'com.test.gradle'
 
-			sourceCompatibility = 1.7
-			targetCompatibility = 1.7
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
 
             repositories {
                 jcenter()
@@ -203,6 +220,11 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 				compile 'javax.persistence:persistence-api:1.0.2'
 				compile 'javax.validation:validation-api:1.0.0.GA'
 				compile 'org.ow2.asm:asm:5.1'
+				compile 'org.slf4j:slf4j-api:1.7.21'
+				compile 'junit:junit:4.12'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
 
 				//not necessary for compilation
 				compile 'net.sf.ehcache:ehcache-core:2.6.11'
@@ -226,7 +248,7 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
         tasksResult.output.contains('Warnings:   8')
         tasksResult.output.contains('Errors:     4')
 	}
-	
+
 	@Unroll
 	def "analyse for project disabled"() {
 		given:
@@ -239,8 +261,8 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 			version = '1.0.0.0'
 			group = 'com.test.gradle'
 
-			sourceCompatibility = 1.7
-			targetCompatibility = 1.7
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
 
 			dependencyAnalysis {
 				enabled = false
@@ -254,7 +276,12 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 				compile 'com.google.code.findbugs:annotations:3.0.0'
 				compile 'javax.persistence:persistence-api:1.0.2'
 				compile 'javax.validation:validation-api:1.0.0.GA'
+				compile 'org.slf4j:slf4j-api:1.7.21'
 				compile 'org.ow2.asm:asm:5.1'
+				compile 'junit:junit:4.12'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
 
 				//not necessary for compilation
 				compile 'net.sf.ehcache:ehcache-core:2.6.11'
