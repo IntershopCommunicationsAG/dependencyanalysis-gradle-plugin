@@ -17,9 +17,12 @@
 
 package com.intershop.gradle.analysis.utils
 
+import groovy.transform.CompileStatic
+
 /**
  * Exception, occurs if class is not readable.
  */
+@CompileStatic
 class ReadClassException extends IOException {
 	
 	private static final long serialVersionUID = 4735293932288385256L;

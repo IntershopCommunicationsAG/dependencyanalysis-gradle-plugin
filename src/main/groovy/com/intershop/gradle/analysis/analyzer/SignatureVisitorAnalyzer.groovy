@@ -15,7 +15,8 @@
  */
 package com.intershop.gradle.analysis.analyzer;
 
-import com.intershop.gradle.analysis.utils.ClassNameCollector;
+import com.intershop.gradle.analysis.utils.ClassNameCollector
+import groovy.transform.CompileStatic;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -26,6 +27,7 @@ import org.objectweb.asm.signature.SignatureVisitor;
  * @author <a href="mailto:markhobson@gmail.com">Mark Hobson</a>
  * @version $Id$
  */
+@CompileStatic
 class SignatureVisitorAnalyzer extends SignatureVisitor
 {
     private ClassNameCollector cc

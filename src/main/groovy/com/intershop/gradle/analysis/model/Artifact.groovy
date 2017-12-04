@@ -15,6 +15,7 @@
  */
 package com.intershop.gradle.analysis.model
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import java.util.zip.ZipEntry
@@ -22,6 +23,7 @@ import java.util.zip.ZipFile
 /**
  * Artifact class contains all information about the artifact self.
  */
+@CompileStatic
 @Slf4j
 class Artifact {
 
@@ -84,9 +86,9 @@ class Artifact {
     @Override
     boolean equals(Object other) {
         if (!(other instanceof Artifact)) {
-            return false;
+            return false
         }
-        return (other.getModule() == module && other.getVersion() == version && other.absoluteFile == absoluteFile)
+        return (((Artifact)other).getModule() == module && ((Artifact)other).getVersion() == version && ((Artifact)other).absoluteFile == absoluteFile)
     }
 
     /**
@@ -94,7 +96,7 @@ class Artifact {
      */
     @Override
     int hashCode() {
-        int hash = 5;
+        int hash = 5
         hash = 97 * hash + module.hashCode()
         hash = 97 * hash + version.hashCode()
         hash = 97 * hash + absoluteFile.getAbsolutePath().hashCode()
@@ -113,11 +115,11 @@ class Artifact {
 		try {
 			ZipFile zipFile = new ZipFile(file)
 			
-			zipFile.entries().findAll { !it.directory && it.name.endsWith('.class') }.each { ZipEntry entry ->
-				String name = entry.getName()
+			zipFile.entries().findAll { !((ZipEntry)it).directory && ((ZipEntry)it).name.endsWith('.class') }.each { Object entry ->
+				String name = ((ZipEntry)entry).getName()
 				
 				if (name.endsWith( ".class" )){
-					classfiles.add(name.replaceAll("/", "."));
+					classfiles.add(name.replaceAll("/", "."))
 				}
 			}
 			log.info('Analysing of {} was successful.', file)

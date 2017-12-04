@@ -17,11 +17,13 @@
 
 package com.intershop.gradle.analysis.utils
 
+import groovy.transform.CompileStatic
 import org.objectweb.asm.Type
 
 /**
  * Collects all used classes for check
  */
+@CompileStatic
 class ClassNameCollector {
 	
 	private Set<String> classes 
@@ -52,7 +54,7 @@ class ClassNameCollector {
 		name = name.replace( '/', '.' )
 
 		if(! name.startsWith('java.lang') || name.startsWith('java.')) {
-			classes.add( "${name}.class" )
+			classes.add( "${name}.class".toString() )
 		}
 	}
 	

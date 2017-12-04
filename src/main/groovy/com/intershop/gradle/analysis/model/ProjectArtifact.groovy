@@ -19,6 +19,7 @@ import com.intershop.gradle.analysis.analyzer.AnnotationAnalyzer
 import com.intershop.gradle.analysis.analyzer.ConstantPoolParser
 import com.intershop.gradle.analysis.utils.ClassNameCollector
 import com.intershop.gradle.analysis.utils.ReadClassException
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.objectweb.asm.ClassReader
 
@@ -29,6 +30,7 @@ import java.util.zip.ZipFile
  * Project artifact implementation
  * Extends artifact with additional infomrmation.
  */
+@CompileStatic
 @Slf4j
 class ProjectArtifact extends Artifact {
 
@@ -58,11 +60,11 @@ class ProjectArtifact extends Artifact {
 		
 		ZipFile zipFile = new ZipFile(file)
 				
-		zipFile.entries().findAll { !it.directory && it.name.endsWith('.class') }.each { ZipEntry entry ->
-			String name = entry.getName()
+		zipFile.entries().findAll { !((ZipEntry)it).directory && ((ZipEntry)it).name.endsWith('.class') }.each { Object entry ->
+			String name = ((ZipEntry)entry).getName()
 			if (name.endsWith( ".class" )) {
-				String className = entry.getName().replaceAll('/', '.')
-				classmap.put(className, readClass(className, zipFile.getInputStream(entry).getBytes()))
+				String className = name.replaceAll('/', '.')
+				classmap.put(className, readClass(className, zipFile.getInputStream((ZipEntry)entry).getBytes()))
 			}
 		}
 		return classmap

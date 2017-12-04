@@ -24,6 +24,7 @@ import org.gradle.api.plugins.ReportingBasePlugin
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.Jar
+
 /**
  * Implementation of the plugin
  */
