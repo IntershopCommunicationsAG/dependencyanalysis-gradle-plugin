@@ -18,14 +18,7 @@ package com.intershop.gradle.analysis.analyzer
 import com.intershop.gradle.analysis.utils.ClassNameCollector
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-
-import org.objectweb.asm.AnnotationVisitor
-import org.objectweb.asm.Attribute
-import org.objectweb.asm.ClassVisitor
-import org.objectweb.asm.FieldVisitor
-import org.objectweb.asm.MethodVisitor
-import org.objectweb.asm.Opcodes
-import org.objectweb.asm.Type
+import org.objectweb.asm.*
 import org.objectweb.asm.signature.SignatureReader
 import org.objectweb.asm.signature.SignatureVisitor
 
@@ -54,7 +47,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         }
 
         void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            ClassAnalyzer.log.info('class {} extends {} implements {}' , name, superName, interfaces)
+            log.info('class {} extends {} implements {}' , name, superName, interfaces)
 
             if (signature == null) {
                 cc.addName( superName )
@@ -105,7 +98,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
 
         @Override
         void visitEnd() {
-            ClassAnalyzer.log.info("Finished")
+            log.info("Finished")
         }
 
         private void addTypeSignature( String signature ) {

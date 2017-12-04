@@ -44,7 +44,7 @@ class MethodAnalyzer extends MethodVisitor {
 
 	@Override
 	AnnotationVisitor visitAnnotationDefault() {
-		return null;
+		return null
 	}
 
 	@Override
@@ -122,7 +122,7 @@ class MethodAnalyzer extends MethodVisitor {
 
 	@Override
 	AnnotationVisitor visitParameterAnnotation(int arg0, String arg1, boolean arg2) {
-		return null;
+		return null
 	}
 
 	@Override

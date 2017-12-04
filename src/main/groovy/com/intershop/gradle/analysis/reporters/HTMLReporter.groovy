@@ -17,11 +17,14 @@ package com.intershop.gradle.analysis.reporters
 
 import com.intershop.gradle.analysis.model.Artifact
 import com.intershop.gradle.analysis.model.ProjectArtifact
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
 
 /**
  * Implements the reporter for result output
  */
+@CompileStatic
 class HTMLReporter {
 	
 	private Set<Artifact> artifacts = []
@@ -37,7 +40,8 @@ class HTMLReporter {
 		this.artifacts.addAll(artifacts)
 		this.projectArtifacts.addAll(projectArtifacts)
 	}
-	
+
+    @CompileDynamic
 	void createReport(File reportFile, String projectName, String projectVersion) {
 		Writer writer = new FileWriter(reportFile)
 		writer.write('<!DOCTYPE html>')

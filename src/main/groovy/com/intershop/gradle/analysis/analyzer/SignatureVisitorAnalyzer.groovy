@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.intershop.gradle.analysis.analyzer;
+package com.intershop.gradle.analysis.analyzer
 
 import com.intershop.gradle.analysis.utils.ClassNameCollector
-import groovy.transform.CompileStatic;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.signature.SignatureVisitor;
+import groovy.transform.CompileStatic
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.signature.SignatureVisitor
 
 /**
  * Computes the set of classes referenced by visited code.
