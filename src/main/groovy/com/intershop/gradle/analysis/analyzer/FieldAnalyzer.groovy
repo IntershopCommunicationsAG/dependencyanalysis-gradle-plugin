@@ -26,17 +26,17 @@ import org.objectweb.asm.Opcodes
  * Identifies annotation dependencies
  */
 @CompileStatic
-public class FieldAnalyzer extends FieldVisitor {
+class FieldAnalyzer extends FieldVisitor {
 
 	private ClassNameCollector cc
 	
-	public FieldAnalyzer(ClassNameCollector cc) {
+	FieldAnalyzer(ClassNameCollector cc) {
 		super(Opcodes.ASM5)
 		this.cc = cc
 	}
 	
 	@Override
-	public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+	AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 		return new AnnotationAnalyzer(cc, desc, visible)
 	}
 

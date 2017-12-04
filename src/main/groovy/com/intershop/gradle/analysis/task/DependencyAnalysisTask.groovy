@@ -20,7 +20,7 @@ package com.intershop.gradle.analysis.task
 import com.intershop.gradle.analysis.model.Artifact
 import com.intershop.gradle.analysis.model.ProjectArtifact
 import com.intershop.gradle.analysis.reporters.HTMLReporter
-import org.apache.commons.collections.CollectionUtils
+import org.apache.commons.collections4.CollectionUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
@@ -35,7 +35,7 @@ import org.gradle.api.tasks.TaskAction
  */
 class DependencyAnalysisTask extends DefaultTask {
 
-	public static final String REPORT_NAME = 'dependency-report'
+	static final String REPORT_NAME = 'dependency-report'
 
     /**
      * Classpath of the project

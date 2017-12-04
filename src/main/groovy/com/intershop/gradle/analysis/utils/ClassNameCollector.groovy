@@ -26,15 +26,15 @@ class ClassNameCollector {
 	
 	private Set<String> classes 
 	
-	public ClassNameCollector() {
+	ClassNameCollector() {
 		classes = new HashSet<String>()
 	}
 	
-	public Set<String> getClasses() {
+	Set<String> getClasses() {
 		return classes
 	}
 	
-	public void addName( String name ) {
+	void addName( String name ) {
 		if (name == null) {
 			return
 		}
@@ -56,7 +56,7 @@ class ClassNameCollector {
 		}
 	}
 	
-	public void addNames(final String[] names) {
+	void addNames(final String[] names) {
 		if (! names) {
 			return
 		}
@@ -66,11 +66,11 @@ class ClassNameCollector {
 		}
 	}
 	
-	public void addDesc(final String desc) {
+	void addDesc(final String desc) {
 		addType( Type.getType( desc ) )
 	}
 
-	public void addMethodDesc(final String desc) {
+	void addMethodDesc(final String desc) {
 		addType(Type.getReturnType(desc))
 		Type[] types = Type.getArgumentTypes(desc)
 
@@ -79,7 +79,7 @@ class ClassNameCollector {
 		}
 	}
 	
-	public void addType(final Type t) {
+	void addType(final Type t) {
 		switch (t.getSort()) {
 			case Type.ARRAY:
 				addType( t.getElementType() )

@@ -40,7 +40,7 @@ class ProjectArtifact extends Artifact {
 		dependencyMap.putAll(getAnalyzedClasses(absoluteFile))
 	}
 	
-	public Set<String> getAllDependencyClasses() {
+	Set<String> getAllDependencyClasses() {
 		Set<String> adc = []
 		dependencyMap.keySet().each {
 			adc.addAll(dependencyMap.get(it))
@@ -48,7 +48,7 @@ class ProjectArtifact extends Artifact {
 		return adc
 	}
 	
-	public Map<String, Set<String>> getDependencyMap() {
+	Map<String, Set<String>> getDependencyMap() {
 		return dependencyMap
 	}
 	

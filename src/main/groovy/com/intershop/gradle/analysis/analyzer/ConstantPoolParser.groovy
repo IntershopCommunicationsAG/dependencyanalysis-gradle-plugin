@@ -25,25 +25,25 @@ import java.nio.ByteOrder
  * Adapted from http://stackoverflow.com/a/32278587/23691
  * See also http://svn.apache.org/viewvc/maven/shared/trunk/maven-dependency-analyzer/?pathrev=1717974
  */
-public class ConstantPoolParser
+class ConstantPoolParser
 {
-    public static final int HEAD = 0xcafebabe;
+    static final int HEAD = 0xcafebabe;
 
     // Constant pool types
-    public static final byte CONSTANT_UTF8 = 1
-    public static final byte CONSTANT_INTEGER = 3
-    public static final byte CONSTANT_FLOAT = 4
-    public static final byte CONSTANT_LONG = 5
-    public static final byte CONSTANT_DOUBLE = 6
-    public static final byte CONSTANT_CLASS = 7
-    public static final byte CONSTANT_STRING = 8
-    public static final byte CONSTANT_FIELDREF = 9
-    public static final byte CONSTANT_METHODREF = 10
-    public static final byte CONSTANT_INTERFACEMETHODREF = 11
-    public static final byte CONSTANT_NAME_AND_TYPE = 12
-    public static final byte CONSTANT_METHODHANDLE = 15
-    public static final byte CONSTANT_METHOD_TYPE = 16
-    public static final byte CONSTANT_INVOKE_DYNAMIC = 18
+    static final byte CONSTANT_UTF8 = 1
+    static final byte CONSTANT_INTEGER = 3
+    static final byte CONSTANT_FLOAT = 4
+    static final byte CONSTANT_LONG = 5
+    static final byte CONSTANT_DOUBLE = 6
+    static final byte CONSTANT_CLASS = 7
+    static final byte CONSTANT_STRING = 8
+    static final byte CONSTANT_FIELDREF = 9
+    static final byte CONSTANT_METHODREF = 10
+    static final byte CONSTANT_INTERFACEMETHODREF = 11
+    static final byte CONSTANT_NAME_AND_TYPE = 12
+    static final byte CONSTANT_METHODHANDLE = 15
+    static final byte CONSTANT_METHOD_TYPE = 16
+    static final byte CONSTANT_INVOKE_DYNAMIC = 18
     private static final int OXF0 = 0xf0
     private static final int OXE0 = 0xe0
     private static final int OX3F = 0x3F

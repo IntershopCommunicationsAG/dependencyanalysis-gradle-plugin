@@ -24,11 +24,11 @@ class ReadClassException extends IOException {
 	
 	private static final long serialVersionUID = 4735293932288385256L;
 	
-	public ReadClassException(String message) {
+	ReadClassException(String message) {
 		super(message);
 	}
 	
-	public ReadClassException(String message, Throwable cause) {
+	ReadClassException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }

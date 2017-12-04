@@ -26,20 +26,20 @@ import org.objectweb.asm.signature.SignatureVisitor;
  * @author <a href="mailto:markhobson@gmail.com">Mark Hobson</a>
  * @version $Id$
  */
-public class SignatureVisitorAnalyzer extends SignatureVisitor
+class SignatureVisitorAnalyzer extends SignatureVisitor
 {
     private ClassNameCollector cc
 
-    public SignatureVisitorAnalyzer(ClassNameCollector cc) {
+    SignatureVisitorAnalyzer(ClassNameCollector cc) {
         super(Opcodes.ASM5)
         this.cc = cc
     }
 
-    public void visitClassType( final String name ) {
+    void visitClassType( final String name ) {
         cc.addName( name )
     }
 
-    public void visitInnerClassType( final String name ) {
+    void visitInnerClassType( final String name ) {
         cc.addName( name )
     }
 }

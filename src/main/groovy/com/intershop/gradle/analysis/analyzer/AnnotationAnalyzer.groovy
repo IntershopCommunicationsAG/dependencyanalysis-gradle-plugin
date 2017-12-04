@@ -33,7 +33,7 @@ import org.objectweb.asm.signature.SignatureVisitor
 @Slf4j
 class AnnotationAnalyzer extends AnnotationVisitor {
 	
-    public AnnotationAnalyzer(ClassNameCollector cc, String desc, boolean visible) {
+    AnnotationAnalyzer(ClassNameCollector cc, String desc, boolean visible) {
         super(Opcodes.ASM5)
 		if(desc) {
 			cc.addDesc(desc)
@@ -53,7 +53,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
             this.cc = cc
         }
 
-        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+        void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
             ClassAnalyzer.log.info('class {} extends {} implements {}' , name, superName, interfaces)
 
             if (signature == null) {
@@ -65,24 +65,24 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         }
 
         @Override
-        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             return new AnnotationAnalyzer(cc, desc, visible)
         }
 
         @Override
-        public void visitAttribute(Attribute attribute) { }
+        void visitAttribute(Attribute attribute) { }
 
         @Override
-        public void visitInnerClass(String name, String outerName, String innerName, int access) { }
+        void visitInnerClass(String name, String outerName, String innerName, int access) { }
 
         @Override
-        public void visitSource(String source, String debug) { }
+        void visitSource(String source, String debug) { }
 
         @Override
-        public void visitOuterClass(String owner, String name, String desc) {}
+        void visitOuterClass(String owner, String name, String desc) {}
 
         @Override
-        public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+        FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
             if (signature == null) {
                 cc.addDesc( desc )
             }
@@ -94,7 +94,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         }
 
         @Override
-        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             if (signature == null) {
                 cc.addMethodDesc( desc )
             }
@@ -104,7 +104,7 @@ class AnnotationAnalyzer extends AnnotationVisitor {
         }
 
         @Override
-        public void visitEnd() {
+        void visitEnd() {
             ClassAnalyzer.log.info("Finished")
         }
 

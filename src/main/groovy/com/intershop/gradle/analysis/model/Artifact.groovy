@@ -74,7 +74,7 @@ class Artifact {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
+    String toString() {
         return "${module}:${version}"
     }
 
@@ -82,7 +82,7 @@ class Artifact {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(Object other) {
+    boolean equals(Object other) {
         if (!(other instanceof Artifact)) {
             return false;
         }
@@ -93,7 +93,7 @@ class Artifact {
      * {@inheritDoc}
      */
     @Override
-    public int hashCode() {
+    int hashCode() {
         int hash = 5;
         hash = 97 * hash + module.hashCode()
         hash = 97 * hash + version.hashCode()

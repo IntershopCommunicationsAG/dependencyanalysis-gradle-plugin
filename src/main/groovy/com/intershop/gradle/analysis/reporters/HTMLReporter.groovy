@@ -22,7 +22,7 @@ import groovy.xml.MarkupBuilder
 /**
  * Implements the reporter for result output
  */
-public class HTMLReporter {
+class HTMLReporter {
 	
 	private Set<Artifact> artifacts = []
 	private Set<ProjectArtifact> projectArtifacts = []
@@ -38,7 +38,7 @@ public class HTMLReporter {
 		this.projectArtifacts.addAll(projectArtifacts)
 	}
 	
-	public void createReport(File reportFile, String projectName, String projectVersion) {
+	void createReport(File reportFile, String projectName, String projectVersion) {
 		Writer writer = new FileWriter(reportFile)
 		writer.write('<!DOCTYPE html>')
 		def builder = new MarkupBuilder(writer)
