@@ -17,8 +17,13 @@ package com.intershop.gradle.analysis
 
 import com.intershop.gradle.analysis.extension.DependencyAnalysisExtension
 import com.intershop.gradle.analysis.task.DependencyAnalysisTask
+import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.ReportingBasePlugin
 import org.gradle.api.reporting.ReportingExtension
@@ -31,7 +36,6 @@ import org.gradle.api.tasks.bundling.Jar
 class DependencyAnalysisPlugin implements Plugin<Project> {
 
 	private static final String DEPENDENCIESCHECK = 'dependencyAnalysis'
-	private DependencyAnalysisExtension extension
 
     /**
      * Applies this prokugin to the project
@@ -39,40 +43,46 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
      */
     void apply(Project project) {
         //applies the Base reporting pluging
-		project.plugins.apply(ReportingBasePlugin)
-		
-		DependencyAnalysisExtension extension = createExtension(project)
+        project.plugins.apply(ReportingBasePlugin)
 
-		project.afterEvaluate {
-			if(extension.isEnabled()) {
-				JavaPluginConvention javaConvention = project.convention.findPlugin(JavaPluginConvention.class)
-				if(javaConvention != null) {
-                    String sourceSetName = extension.getSourceset()
-                    if(! sourceSetName) {
-                        sourceSetName = SourceSet.MAIN_SOURCE_SET_NAME
-                    }
+        DependencyAnalysisExtension extension = project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension, project)
+        extension.reportsDir = project.extensions.getByType(ReportingExtension).file(DEPENDENCIESCHECK)
 
-					SourceSet sourceSet = javaConvention.sourceSets.getByName(sourceSetName)
-					Jar jar = project.tasks.findByName(sourceSet.jarTaskName)
-				
-					project.tasks.getByName('check').dependsOn(project.task(DEPENDENCIESCHECK,
-						type: DependencyAnalysisTask,
-						group: 'Verification',
-						description: 'Determines the usage of existing dependencies') {
-						
-						base = jar.outputs.files
-						classpath = project.configurations['compile']
-					})
-				} else {
-                    project.logger.info('The java plugin convention is not available!')
-				}
-			}
-		}
+        project.getPlugins().withType(JavaPlugin.class, new Action<JavaPlugin>() {
+            void execute(JavaPlugin javaPlugin) {
+                JavaPluginConvention javaConvention =
+                        project.getConvention().getPlugin(JavaPluginConvention.class)
+
+                SourceSet sourceSet = javaConvention.getSourceSets().getByName(extension.getSourceset())
+                Jar jar = (Jar) project.tasks.findByName(sourceSet.jarTaskName)
+
+                DependencyAnalysisTask analysisTask = project.tasks.maybeCreate(DEPENDENCIESCHECK, DependencyAnalysisTask)
+                analysisTask.setGroup('Verification')
+                analysisTask.setDescription('Determines the usage of existing dependencies')
+                analysisTask.setBase(jar.outputs.files)
+
+                // compile configuration for java plugin
+                Configuration compile = project.getConfigurations().findByName('compile')
+                // api configuration for java lib plugin
+                Configuration api = project.getConfigurations().findByName('api')
+
+                if (api) {
+                    analysisTask.dependsOn(api)
+                }
+                if (compile) {
+                    analysisTask.dependsOn(compile)
+                }
+
+                analysisTask.setHtmlReportDir(extension.getReportsDirProvider())
+                analysisTask.setFailOnErrors(extension.getFailOnErrorsProvider())
+                analysisTask.setFailOnWarnings(extension.getFailOnWarnings())
+                analysisTask.onlyIf {
+                    extension.getEnabled()
+                }
+
+                Task checkTask = project.tasks.findByName(JavaBasePlugin.CHECK_TASK_NAME)
+                checkTask.dependsOn(analysisTask)
+            }
+        })
     }
-	
-	DependencyAnalysisExtension createExtension(Project project) {
-		extension = project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension)
-		extension.reportsDir = project.extensions.getByType(ReportingExtension).file(DEPENDENCIESCHECK)
-		return extension
-	}
 }

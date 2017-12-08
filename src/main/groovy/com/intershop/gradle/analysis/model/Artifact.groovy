@@ -25,7 +25,7 @@ import java.util.zip.ZipFile
  */
 @CompileStatic
 @Slf4j
-class Artifact {
+class Artifact implements Serializable {
 
 	File absoluteFile
 	String module

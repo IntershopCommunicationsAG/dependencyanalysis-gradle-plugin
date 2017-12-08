@@ -17,51 +17,158 @@
 
 package com.intershop.gradle.analysis.task
 
+import com.intershop.gradle.analysis.extension.DependencyAnalysisExtension
 import com.intershop.gradle.analysis.model.Artifact
 import com.intershop.gradle.analysis.model.ProjectArtifact
 import com.intershop.gradle.analysis.reporters.HTMLReporter
+import groovy.transform.CompileStatic
 import org.apache.commons.collections4.CollectionUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.file.FileCollection
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskAction
 
 /**
  * This is task implementation of this task.
  */
+@CompileStatic
 class DependencyAnalysisTask extends DefaultTask {
 
 	static final String REPORT_NAME = 'dependency-report'
 
     /**
-     * Classpath of the project
+     * Fail on errors
      */
-	@InputFiles
-	Configuration classpath
+    final Property<Boolean> failOnErrors = project.objects.property(Boolean)
+
+    @Input
+    boolean getFailOnErrors() {
+        return failOnErrors.get()
+    }
+
+    void setFailOnErrors(boolean failOnErrors) {
+        this.failOnErrors.set(failOnErrors)
+    }
+
+    void setFailOnErrors(Provider<Boolean> failOnErrors) {
+        this.failOnErrors.set(failOnErrors)
+    }
 
     /**
-     * This files will be analyzed.
+     * Fail on warnings
      */
-	@InputFiles
-	FileCollection base
+    final Property<Boolean> failOnWarnings = project.objects.property(Boolean)
+
+    @Input
+    boolean getFailOnWarnings() {
+        return failOnWarnings.get()
+    }
+
+    void setFailOnWarnings(Boolean failOnWarnings) {
+        this.failOnWarnings.set(failOnWarnings)
+    }
+
+    void setFailOnWarnings(Provider<Boolean> failOnWarnings) {
+        this.failOnWarnings.set(failOnWarnings)
+    }
 
     /**
      * Report file
      */
-	@OutputFile
-	File htmlReport
+    final Property<File> htmlReportDir = project.objects.property(File)
+
+    void setHtmlReportDir(File htmlReport) {
+        this.htmlReportDir.set(htmlReport)
+    }
+
+    void setHtmlReportDir(Provider<File> htmlReport) {
+        this.htmlReportDir.set(htmlReport)
+    }
+
+    @OutputFile
+    File getHtmlReport() {
+        return new File(htmlReportDir.get(), "${REPORT_NAME}.html")
+    }
 
     /**
-     * Constructs tis task
+     * Resolved dependencies
      */
-	DependencyAnalysisTask() {
-		File reportDir = new File("${project.dependencyAnalysis.reportsDir}")
-		htmlReport = new File(reportDir, "${REPORT_NAME}.html")
-	}
+    @Input
+    Set<Artifact> getFirstLevelArtifacts() {
+        Set<Artifact> artifacts = new HashSet()
+        Set<ResolvedDependency> dependencies = []
+        Configuration compile = project.getConfigurations().findByName('compile')
+        if(compile) {
+            dependencies.addAll(compile.getResolvedConfiguration().getFirstLevelModuleDependencies())
+        }
+        Configuration api = project.getConfigurations().findByName('api')
+        if(api) {
+            dependencies.addAll(api.getResolvedConfiguration().getFirstLevelModuleDependencies())
+        }
+
+        dependencies.each { ResolvedDependency rd ->
+            rd.getModuleArtifacts().each {
+                Artifact a = new Artifact(it.getFile().getAbsoluteFile(),
+                        it.getModuleVersion().getId().getModule().toString(),
+                        it.getModuleVersion().getId().getVersion())
+                artifacts.add(a)
+            }
+        }
+
+        return artifacts
+    }
+
+    @Input
+    Set<Artifact> getResolvedArtifacts() {
+        Set<Artifact> artifacts = new HashSet()
+        Set<ResolvedArtifact> resolvedArtifacts = []
+
+        Configuration compile = project.getConfigurations().findByName('compile')
+        if(compile) {
+            resolvedArtifacts.addAll(compile.getResolvedConfiguration().getResolvedArtifacts())
+        }
+        Configuration api = project.getConfigurations().findByName('api')
+        if(api) {
+            resolvedArtifacts.addAll(api.getResolvedConfiguration().getResolvedArtifacts())
+        }
+
+        resolvedArtifacts.each {ResolvedArtifact ra ->
+            Artifact a = new Artifact(ra.getFile().getAbsoluteFile(),
+                    ra.getModuleVersion().getId().getModule().toString(),
+                    ra.getModuleVersion().getId().getVersion())
+            artifacts.add(a)
+        }
+
+        return artifacts
+    }
+
+    /**
+     * This files will be analyzed.
+     */
+    final Property<FileCollection> base = project.objects.property(FileCollection)
+
+    @InputFiles
+    FileCollection getBase() {
+        return base.get()
+    }
+
+    void setBase(FileCollection base) {
+        this.base.set(base)
+    }
+
+    void setBase(Provider<FileCollection> base) {
+        this.base.set(base)
+    }
 
     /**
      * Task action
@@ -70,36 +177,27 @@ class DependencyAnalysisTask extends DefaultTask {
 	@TaskAction
 	void analyze() {
 		Set<Artifact> artifacts = new HashSet()
-		Map<String, Set<Artifact>> classfiles = [:]
 		def projectArtifacts = []
-				
-		getClasspath().getResolvedConfiguration().getFirstLevelModuleDependencies().each {ResolvedDependency rd ->
-			rd.getModuleArtifacts().each {	
-				Artifact a = new Artifact(it.getFile().getAbsoluteFile(),
-				        it.getModuleVersion().getId().getModule().toString(),
-                        it.getModuleVersion().getId().getVersion())
-                artifacts.each {
-                    List<Artifact> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
-                    if(il.size() > 0) {
-                        it.dublicatedClasses.addAll(il)
-                        a.dublicatedClasses.addAll(il)
-                        it.dublicatedArtifacts.add(a)
-                        a.dublicatedArtifacts.add(it)
-                    }
-                }
-                artifacts.add(a)
-			}
-		}
 
-		getClasspath().getResolvedConfiguration().getResolvedArtifacts().each {
-            Artifact a = new Artifact(it.getFile().getAbsoluteFile(),
-                    it.getModuleVersion().getId().getModule().toString(),
-                    it.getModuleVersion().getId().getVersion())
+        getFirstLevelArtifacts().each {Artifact a ->
+            artifacts.each {
+                Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
+                if(il.size() > 0) {
+                    it.dublicatedClasses.addAll(il)
+                    a.dublicatedClasses.addAll(il)
+                    it.dublicatedArtifacts.add(a)
+                    a.dublicatedArtifacts.add(it)
+                }
+            }
+            artifacts.add(a)
+        }
+
+        resolvedArtifacts.each { Artifact a ->
             if(artifacts.contains(a)) {
                 a.setTransitive(1)
             } else {
                 artifacts.each {
-                    List<Artifact> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
+                    Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
                     if(il.size() > 0) {
                         it.dublicatedClasses.addAll(il)
                         a.dublicatedClasses.addAll(il)
@@ -108,16 +206,16 @@ class DependencyAnalysisTask extends DefaultTask {
                     }
                 }
                 a.setTransitive(2)
-                artifacts.add(a)
             }
+            artifacts.add(a)
 		}
 		
 		getBase().getFiles().each {File f ->
-			projectArtifacts.add(new ProjectArtifact(f, project.getModule().toString(), project.getVersion(), false))
+			projectArtifacts.add(new ProjectArtifact(f, project.getGroup().toString(), project.getVersion().toString(), false))
 		}
 		
-		projectArtifacts.each { ProjectArtifact pa ->
-            pa.getAllDependencyClasses().each {String classname ->
+		projectArtifacts.each { Object pa ->
+            ((ProjectArtifact)pa).getAllDependencyClasses().each {String classname ->
                 artifacts.findAll {it.containedClasses.contains(classname)}.each {
                     it.usedClasses.add(classname)
                     project.logger.debug("Add used for ${classname} to ${it}")
@@ -126,7 +224,7 @@ class DependencyAnalysisTask extends DefaultTask {
 		}
 		
 		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
-		reporter.createReport(getHtmlReport(), project.name, project.version)
+		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
 
         Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 }
         Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 1 }
@@ -136,7 +234,7 @@ class DependencyAnalysisTask extends DefaultTask {
         int errors = duplicateUsed.size() + unused.findAll { it.transitive == 0 }.size()
         int warnings = unused.findAll { it.transitive > 0 }.size() + usedTransitive.size()
 
-		if((project.dependencyAnalysis.getFailOnErrors() && errors > 0) || (project.dependencyAnalysis.getFailOnWarnings() && warnings > 0)) {
+		if((getFailOnErrors() && errors > 0) || (getFailOnWarnings() && warnings > 0)) {
 			throw new GradleException("""
                 == Dependency Report ==
 
@@ -148,7 +246,7 @@ class DependencyAnalysisTask extends DefaultTask {
                 """.stripIndent(12))
 		}
 		
-		if((errors > 0 || warnings > 0) && ! project.dependencyAnalysis.getFailOnErrors() && ! project.dependencyAnalysis.getFailOnWarnings()) {
+		if((errors > 0 || warnings > 0) && ! getFailOnErrors() && ! getFailOnWarnings()) {
 
             String duplicatesStr = ''
             duplicates.each {

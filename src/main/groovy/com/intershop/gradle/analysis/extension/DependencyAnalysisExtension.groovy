@@ -15,7 +15,12 @@
  */
 package com.intershop.gradle.analysis.extension
 
+import com.intershop.gradle.analysis.model.ProjectArtifact
 import groovy.transform.CompileStatic
+import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.SourceSet
 
 /**
  * Implements the extensions of this plugin
@@ -26,21 +31,99 @@ class DependencyAnalysisExtension {
 	/**
 	 * Path for the report file
 	 */
-	File reportsDir
+    private final Property<File> reportsDir
+
+    Provider<File> getReportsDirProvider() {
+        return reportsDir
+    }
+
+    String getReportsDir() {
+        return reportsDir.get()
+    }
+
+    void setReportsDir(File reportsDir) {
+        this.reportsDir.set(reportsDir)
+    }
 
     /**
-     * Fail on error or warnings
+     * Fail on error
      */
-    boolean failOnErrors = true
-    boolean failOnWarnings = false
+    private final Property<Boolean> failOnErrors
+
+    Provider<Boolean> getFailOnErrorsProvider() {
+        return failOnErrors
+    }
+
+    boolean getFailOnErrors() {
+        return failOnErrors.get()
+    }
+
+    void setFailOnErrors(boolean failOnErrors) {
+        this.failOnErrors.set(failOnErrors)
+    }
+
+    /**
+     * Fail on warnings
+     */
+    private final Property<Boolean> failOnWarnings
+
+    Provider<Boolean> getFailOnWarningsProvider() {
+        return failOnWarnings
+    }
+
+    Boolean getFailOnWarnings() {
+        return failOnWarnings.get()
+    }
+
+    void setFailOnWarnings(Boolean failOnWarnings) {
+        this.failOnWarnings.set(failOnWarnings)
+    }
 
     /**
      * Inspection can be disabled for an project
      */
-    boolean enabled = true
+    private final Property<Boolean> enabled
+
+    Provider<Boolean> getEnabledProvider() {
+        return enabled
+    }
+
+    Boolean getEnabled() {
+        return enabled.get()
+    }
+
+    void setEnabled(Boolean enabled) {
+        this.enabled.set(enabled)
+    }
 
     /**
      * Source set name
      */
-    String sourceset
+    private final Property<String> sourceset
+
+    Provider<String> getSourcesetProvider() {
+        return sourceset
+    }
+
+    String getSourceset() {
+        return sourceset.getOrElse(SourceSet.MAIN_SOURCE_SET_NAME)
+    }
+
+    void setSourceset(String sourceset) {
+        this.sourceset.set(sourceset)
+    }
+
+    DependencyAnalysisExtension(Project project) {
+        reportsDir = project.objects.property(File)
+
+        failOnErrors = project.objects.property(Boolean)
+        failOnWarnings = project.objects.property(Boolean)
+        enabled = project.objects.property(Boolean)
+
+        sourceset = project.objects.property(String)
+
+        setFailOnErrors(true)
+        setFailOnWarnings(false)
+        setEnabled(true)
+    }
 }
