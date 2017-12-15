@@ -18,7 +18,7 @@ package com.intershop.gradle.analysis.gradle
 import com.intershop.gradle.test.AbstractIntegrationSpec
 import spock.lang.Unroll
 
-class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
+class PluginIntegrationSpec extends AbstractIntegrationSpec {
 
     def setup() {
         File settingsGradleNew = file('settings.gradle')
@@ -72,11 +72,6 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 
 		then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
-
-        ! tasksResult.output.contains('Warnings:')
-        ! tasksResult.output.contains('Errors:')
-        ! tasksResult.output.contains('Warnings:')
-        ! tasksResult.output.contains('Errors:')
 	}
 
 	@Unroll
@@ -99,7 +94,10 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
             }
 
             dependencyAnalysis {
-                failOnErrors = false
+                failOnDuplicates = false
+                failOnUnusedFirstLevelDependencies = false
+                failOnUsedTransitiveDependencies = false
+                failOnUnusedTransitiveDependencies = false
             }
 
 			dependencies {
@@ -131,9 +129,6 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
-
-        tasksResult.output.contains('Warnings: 1')
-        tasksResult.output.contains('Errors:   3')
 	}
 
     @Unroll
@@ -158,7 +153,10 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
             }
 
             dependencyAnalysis {
-                failOnErrors = false
+                failOnDuplicates = false
+                failOnUnusedFirstLevelDependencies = false
+                failOnUsedTransitiveDependencies = false
+                failOnUnusedTransitiveDependencies = false
             }
 
 			dependencies {
@@ -190,10 +188,6 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
-
-        tasksResult.output.contains('Warnings: 8')
-        tasksResult.output.contains('Errors:   4')
-        tasksResult.output.contains('Duplicate Dependencies')
     }
 
 	@Unroll
@@ -244,9 +238,57 @@ class DependencyAnalysisPluginSpec extends AbstractIntegrationSpec {
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+	}
 
-        tasksResult.output.contains('Warnings:   8')
-        tasksResult.output.contains('Errors:     4')
+	@Unroll
+	def "analyse for project failOnErrors with java-library plugin"() {
+		given:
+		buildFile << """
+            plugins {
+                id 'java-library'
+                id 'com.intershop.gradle.dependencyanalysis'
+            }
+
+			version = '1.0.0'
+			group = 'com.test.gradle'
+
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
+
+            repositories {
+                jcenter()
+            }
+
+			dependencies {
+				api 'com.google.code.findbugs:annotations:3.0.0'
+				api 'javax.persistence:persistence-api:1.0.2'
+				api 'javax.validation:validation-api:1.0.0.GA'
+				api 'org.ow2.asm:asm:5.1'
+				api 'org.slf4j:slf4j-api:1.7.21'
+				
+				api 'junit:junit:4.12'
+				api('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
+
+				//not necessary for compilation
+				api 'net.sf.ehcache:ehcache-core:2.6.11'
+				api 'org.springframework:spring-web:4.1.6.RELEASE'
+
+                // double classes
+                api 'org.ow2.asm:asm-all:4.2'
+			}
+		""".stripIndent()
+
+		when:
+		List<String> tasksArgs = ['build', '-s']
+
+		def tasksResult = getPreparedGradleRunner()
+				.withArguments(tasksArgs)
+				.buildAndFail()
+
+		then:
+		new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
 	}
 
 	@Unroll

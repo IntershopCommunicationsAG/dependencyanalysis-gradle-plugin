@@ -1,10 +1,13 @@
 = Dependency Analysis Plugin
-:latestRevision: 2.0.0
+:latestRevision: 3.0.0
 :toc:
+:icons: font
+
+NOTE: Version 3 of this plugin will only work with Gradle 4 and JDK 8.
 
 == Summary
-This plugin identifies unused compile dependencies of a project and it detects duplicate classes in dependencies.
-A short result is written to the console and a detailed result is written to a html report.
+This plugin identifies unused dependencies of a project and it detects duplicate classes in dependencies.
+A detailed result is written to a html report. It is possible to configure when the task should fail.
 
 == Usage
 To apply the Dependency Analysis Plugin to your projects, add the following in your build script:
@@ -17,12 +20,24 @@ plugins {
 
 dependencyAnalysis {
   reportsDir = file('reports')
-  failOnErrors = true
+
+  failOnDuplicates = true
+  failOnUnusedFirstLevelDependencies = true
+  failOnUsedTransitiveDependencies = true
+  failOnUnusedTransitiveDependencies = false
+
+  enabled = true
 }
 ----
 
+The task is available for Gradle's Java plugin and also for the Java-Library plugin. Dependencies of the 'compile'
+configuration will be checked for the Java plugin. If the Java-Library is configured, dependencies of the configurations
+'api' and the 'implementation' will be analyzed. But in this case it is not possible to analyze transitive dependencies
+separately.
+
 == Tasks
-The Intershop Dependency Analysis plugin adds a task `dependencyAnalysis` to the project. Since this is a verification task, the task `'check'` dependents on it.
+The Intershop Dependency Analysis plugin adds a task `dependencyAnalysis` to the project. Since this is a verification task,
+the task `'check'` dependents on it.
 
 [cols="25%,30%,45%", width="95%, options="header"]
 |===
@@ -39,29 +54,33 @@ This plugin adds an extension *`dependencyAnalysis`* to the project. This extens
 |Property       | Type                      | Default value | Description
 
 |*reportsDir*           |`File`       |`<Base report dir>/dependencyAnalysis` | Base dir for the reporting file.
-|*failOnErrors*         |`boolean`    |`true`  | If this property is true, the build will fail if errors occur during verification.
-|*failOnWarnings*       |`boolean`    |`false` | If this property is true, the build will fail if warnings occur during verification.
+|*failOnDuplicates*                   |`boolean`    |`true`  | The build will fail if there are duplicate classes in the used dependency configuration.
+|*failOnUnusedFirstLevelDependencies* |`boolean`    |`true`  | The build will fail if there are unused dependencies configured.
+|*failOnUsedTransitiveDependencies*   |`boolean`    |`true`  | If transitive dependencies are used, the build will fail.
+|*failOnUnusedTransitiveDependencies* |`boolean`    |`false` | If unused transitive dependencies are available, the build will fail.
 |*enabled*              |`boolean`    |`true`  | If this property is true, the task is added and the project will be verified.
 |*sourceset*            |`String`     |`main`  | The name of the source set which is used for this check.
 |===
 
-Please make sure that only compile dependencies can be correct evaluated.
+Please make sure that only compile dependencies can be correct evaluated. All configuration properties are optional.
 
 == Example Output
 
-This is an example output for 4 warnings, 4 errors and 2 dependencies with duplicate classes.
+This is the example of the output if the task fails.
 
 [source,groovy,subs="attributes"]
 ----
-== Dependency Report ==
-  Warnings: 8
-  Errors:   4
+There are several dependency issues.
+  Please check <project path>/build/reports/dependencyAnalysis/dependency-report.html for more information
+----
 
-Duplicate Dependencies
-  org.ow2.asm:asm:5.1 (C:\Users\user\.gradle\caches\modules-2\files-2.1\org.ow2.asm\asm\5.1\5ef31c4fe953b1fd00b8a88fa1d6820e8785bb45\asm-5.1.jar)
-  org.ow2.asm:asm-all:4.2 (C:\Users\user\.gradle\caches\modules-2\files-2.1\org.ow2.asm\asm-all\4.2\7f7277e5b8002226ebfc8b861c775da8f6a55afd\asm-all-4.2.jar)
+If the task should not fail there is also an output:
 
-Please review E:\project\build\reports\dependencyAnalysis\dependency-report.html for more information
+[source,groovy,subs="attributes"]
+----
+-- Dependency Analysis
+  There are dublicates (2)
+  There are unused dependencies (1)
 ----
 
 == License

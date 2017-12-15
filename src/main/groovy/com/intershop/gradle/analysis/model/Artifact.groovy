@@ -27,7 +27,17 @@ import java.util.zip.ZipFile
 @Slf4j
 class Artifact implements Serializable {
 
-	File absoluteFile
+	private File absoluteFile
+
+	void setAbsoluteFile(File absoluteFile) {
+		this.absoluteFile = absoluteFile
+		containedClasses = getClassFiles(absoluteFile)
+	}
+
+	File getAbsoluteFile() {
+		return absoluteFile
+	}
+
 	String module
 	String version
 	Set<String> containedClasses = []
@@ -36,7 +46,25 @@ class Artifact implements Serializable {
     Set<String> dublicatedClasses = []
     Set<Artifact> dublicatedArtifacts = []
 
+	String configuration
+
     int transitive
+
+	/**
+	 * Constructor
+	 *
+	 * @param absoluteFile  File representation
+	 * @param module        Module name
+	 * @param version       Version
+	 * @param isTransitive  Dependency resolution
+	 */
+	Artifact(String module, String version, String configuration) {
+		this.module = module
+		this.version = version
+		this.configuration = configuration
+
+		this.transitive = 0
+	}
 
     /**
      * Constructor
@@ -46,23 +74,19 @@ class Artifact implements Serializable {
      * @param version       Version
      * @param isTransitive  Dependency resolution
      */
-	Artifact(File absoluteFile, String module, String version) {
+	Artifact(File absoluteFile, String module, String version, String configuration) {
 		this.absoluteFile = absoluteFile
 		this.module = module
 		this.version = version
-		
+		this.configuration = configuration
+
 		this.transitive = 0
-		
 		containedClasses = getClassFiles(absoluteFile)
 	}
 
     void setTransitive(int value) {
         transitive = value
     }
-
-	File getAbsoluteFile() {
-		return absoluteFile
-	}
 
 	String getName() {
 		return "${module}:${version}"
@@ -88,7 +112,10 @@ class Artifact implements Serializable {
         if (!(other instanceof Artifact)) {
             return false
         }
-        return (((Artifact)other).getModule() == module && ((Artifact)other).getVersion() == version && ((Artifact)other).absoluteFile == absoluteFile)
+        return (((Artifact)other).getModule() == module &&
+                ((Artifact)other).getVersion() == version &&
+                ((Artifact)other).absoluteFile == absoluteFile &&
+                ((Artifact)other).configuration == configuration)
     }
 
     /**
@@ -97,9 +124,12 @@ class Artifact implements Serializable {
     @Override
     int hashCode() {
         int hash = 5
+        hash = 97 * hash + configuration.hashCode()
         hash = 97 * hash + module.hashCode()
         hash = 97 * hash + version.hashCode()
-        hash = 97 * hash + absoluteFile.getAbsolutePath().hashCode()
+        if(absoluteFile) {
+            hash = 97 * hash + absoluteFile.getAbsolutePath().hashCode()
+        }
         return hash
     }
 

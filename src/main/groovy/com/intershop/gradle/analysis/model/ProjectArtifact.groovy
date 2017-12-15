@@ -28,7 +28,7 @@ import java.util.zip.ZipFile
 
 /**
  * Project artifact implementation
- * Extends artifact with additional infomrmation.
+ * Extends artifact with additional information.
  */
 @CompileStatic
 @Slf4j
@@ -37,7 +37,7 @@ class ProjectArtifact extends Artifact {
 	Map<String, Set<String>> dependencyMap = [:]
 	
 	ProjectArtifact(File absoluteFile, String module, String version, boolean isTransitive) {
-		super(absoluteFile, module, version)
+		super(absoluteFile, module, version, 'project')
 		
 		dependencyMap.putAll(getAnalyzedClasses(absoluteFile))
 	}

@@ -45,7 +45,8 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
         //applies the Base reporting pluging
         project.plugins.apply(ReportingBasePlugin)
 
-        DependencyAnalysisExtension extension = project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension, project)
+        DependencyAnalysisExtension extension = project.extensions.findByType(DependencyAnalysisExtension) ?:   project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension, project)
+
         extension.reportsDir = project.extensions.getByType(ReportingExtension).file(DEPENDENCIESCHECK)
 
         project.getPlugins().withType(JavaPlugin.class, new Action<JavaPlugin>() {
@@ -61,21 +62,13 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 analysisTask.setDescription('Determines the usage of existing dependencies')
                 analysisTask.setBase(jar.outputs.files)
 
-                // compile configuration for java plugin
-                Configuration compile = project.getConfigurations().findByName('compile')
-                // api configuration for java lib plugin
-                Configuration api = project.getConfigurations().findByName('api')
-
-                if (api) {
-                    analysisTask.dependsOn(api)
-                }
-                if (compile) {
-                    analysisTask.dependsOn(compile)
-                }
+                analysisTask.setFailOnDuplicates(extension.getFailOnDuplicatesProvider())
+                analysisTask.setFailOnUnusedFirstLevelDependencies(extension.getFailOnUnusedFirstLevelDependenciesProvider())
+                analysisTask.setFailOnUsedTransitiveDependencies(extension.getFailOnUsedTransitiveDependenciesProvider())
+                analysisTask.setFailOnUnusedTransitiveDependencies(extension.getFailOnUnusedTransitiveDependenciesProvider())
 
                 analysisTask.setHtmlReportDir(extension.getReportsDirProvider())
-                analysisTask.setFailOnErrors(extension.getFailOnErrorsProvider())
-                analysisTask.setFailOnWarnings(extension.getFailOnWarnings())
+
                 analysisTask.onlyIf {
                     extension.getEnabled()
                 }

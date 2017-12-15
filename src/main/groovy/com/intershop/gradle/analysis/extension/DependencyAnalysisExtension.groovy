@@ -46,37 +46,71 @@ class DependencyAnalysisExtension {
     }
 
     /**
-     * Fail on error
+     * Fail on dublicate classes
      */
-    private final Property<Boolean> failOnErrors
+    private final Property<Boolean> failOnDuplicates
 
-    Provider<Boolean> getFailOnErrorsProvider() {
-        return failOnErrors
+    Provider<Boolean> getFailOnDuplicatesProvider() {
+        return failOnDuplicates
     }
 
-    boolean getFailOnErrors() {
-        return failOnErrors.get()
+    boolean getFailOnDuplicates() {
+        return failOnDuplicates.get()
     }
 
-    void setFailOnErrors(boolean failOnErrors) {
-        this.failOnErrors.set(failOnErrors)
+    void setFailOnDuplicates(boolean failOnDuplicates) {
+        this.failOnDuplicates.set(failOnDuplicates)
     }
 
     /**
-     * Fail on warnings
+     * Fail on unused first level dependencies
      */
-    private final Property<Boolean> failOnWarnings
+    private final Property<Boolean> failOnUnusedFirstLevelDependencies
 
-    Provider<Boolean> getFailOnWarningsProvider() {
-        return failOnWarnings
+    Provider<Boolean> getFailOnUnusedFirstLevelDependenciesProvider() {
+        return failOnUnusedFirstLevelDependencies
     }
 
-    Boolean getFailOnWarnings() {
-        return failOnWarnings.get()
+    boolean getFailOnUnusedFirstLevelDependencies() {
+        return failOnUnusedFirstLevelDependencies.get()
     }
 
-    void setFailOnWarnings(Boolean failOnWarnings) {
-        this.failOnWarnings.set(failOnWarnings)
+    void setFailOnUnusedFirstLevelDependencies(boolean failOnUnusedFirstLevelDependencies) {
+        this.failOnUnusedFirstLevelDependencies.set(failOnUnusedFirstLevelDependencies)
+    }
+
+    /**
+     * Fail on used transitive dependencies
+     */
+    private final Property<Boolean> failOnUsedTransitiveDependencies
+
+    Provider<Boolean> getFailOnUsedTransitiveDependenciesProvider() {
+        return failOnUsedTransitiveDependencies
+    }
+
+    boolean getFailOnUsedTransitiveDependencies() {
+        return failOnUsedTransitiveDependencies.get()
+    }
+
+    void setFailOnUsedTransitiveDependencies(boolean failOnUsedTransitiveDependencies) {
+        this.failOnUsedTransitiveDependencies.set(failOnUsedTransitiveDependencies)
+    }
+
+    /**
+     * Fail on unused transitive dependencies
+     */
+    private final Property<Boolean> failOnUnusedTransitiveDependencies
+
+    Provider<Boolean> getFailOnUnusedTransitiveDependenciesProvider() {
+        return failOnUnusedTransitiveDependencies
+    }
+
+    boolean getFailOnUnusedTransitiveDependencies() {
+        return failOnUnusedTransitiveDependencies.get()
+    }
+
+    void setFailOnUnusedTransitiveDependencies(boolean failOnUnusedTransitiveDependencies) {
+        this.failOnUnusedTransitiveDependencies.set(failOnUnusedTransitiveDependencies)
     }
 
     /**
@@ -116,14 +150,21 @@ class DependencyAnalysisExtension {
     DependencyAnalysisExtension(Project project) {
         reportsDir = project.objects.property(File)
 
-        failOnErrors = project.objects.property(Boolean)
-        failOnWarnings = project.objects.property(Boolean)
+        failOnDuplicates = project.objects.property(Boolean)
+        failOnUnusedFirstLevelDependencies = project.objects.property(Boolean)
+        failOnUsedTransitiveDependencies = project.objects.property(Boolean)
+        failOnUnusedTransitiveDependencies = project.objects.property(Boolean)
+
         enabled = project.objects.property(Boolean)
 
         sourceset = project.objects.property(String)
 
-        setFailOnErrors(true)
-        setFailOnWarnings(false)
+        setFailOnDuplicates(true)
+        setFailOnUnusedFirstLevelDependencies(true)
+        setFailOnUsedTransitiveDependencies(true)
+
+        setFailOnUnusedTransitiveDependencies(false)
+
         setEnabled(true)
     }
 }

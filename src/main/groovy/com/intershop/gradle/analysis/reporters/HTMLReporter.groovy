@@ -187,7 +187,7 @@ class HTMLReporter {
 							used.findAll { it.dublicatedArtifacts.size() == 0 }.each {  Artifact a ->
 								tr {
 									td {
-										span(class: 'info', "Used for 'compile'")
+										span(class: 'info', "Used for '${a.configuration}'")
 									}
 									td {
 										mkp.yield "${a.module}:${a.version}"
