@@ -67,6 +67,9 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 analysisTask.setFailOnUsedTransitiveDependencies(extension.getFailOnUsedTransitiveDependenciesProvider())
                 analysisTask.setFailOnUnusedTransitiveDependencies(extension.getFailOnUnusedTransitiveDependenciesProvider())
 
+                analysisTask.setExcludeDependencyPatterns(extension.getExcludeDependencyPatternsProvider())
+                analysisTask.setExcludeDuplicatePatterns(extension.getExcludeDuplicatePatternsProvider())
+
                 analysisTask.setHtmlReportDir(extension.getReportsDirProvider())
 
                 analysisTask.onlyIf {

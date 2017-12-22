@@ -15,10 +15,10 @@
  */
 package com.intershop.gradle.analysis.extension
 
-import com.intershop.gradle.analysis.model.ProjectArtifact
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
 
@@ -63,6 +63,23 @@ class DependencyAnalysisExtension {
     }
 
     /**
+     * Exclude pattern for dublicates
+     */
+    private final ListProperty<String> excludeDuplicatePatterns
+
+    Provider<List<String>> getExcludeDuplicatePatternsProvider() {
+        return excludeDuplicatePatterns
+    }
+
+    List<String> getExcludeDuplicatePatterns() {
+        excludeDuplicatePatterns.get()
+    }
+
+    void setExcludeDuplicatePatterns(List<String> excludeDuplicatePatterns) {
+        this.excludeDuplicatePatterns.set(excludeDuplicatePatterns)
+    }
+
+    /**
      * Fail on unused first level dependencies
      */
     private final Property<Boolean> failOnUnusedFirstLevelDependencies
@@ -77,6 +94,23 @@ class DependencyAnalysisExtension {
 
     void setFailOnUnusedFirstLevelDependencies(boolean failOnUnusedFirstLevelDependencies) {
         this.failOnUnusedFirstLevelDependencies.set(failOnUnusedFirstLevelDependencies)
+    }
+
+    /**
+     * Exclude dependencies from analysis of unused dependencies
+     */
+    private final ListProperty<String> excludeDependencyPatterns
+
+    Provider<List<String>> getExcludeDependencyPatternsProvider() {
+        return excludeDependencyPatterns
+    }
+
+    List<String> getExcludeDependencyPatterns() {
+        excludeDependencyPatterns.get()
+    }
+
+    void setExcludeDependencyPatterns(List<String> excludeDependencyPatterns) {
+        this.excludeDependencyPatterns.set(excludeDependencyPatterns)
     }
 
     /**
@@ -149,6 +183,9 @@ class DependencyAnalysisExtension {
 
     DependencyAnalysisExtension(Project project) {
         reportsDir = project.objects.property(File)
+
+        excludeDuplicatePatterns = project.objects.listProperty(String)
+        excludeDependencyPatterns = project.objects.listProperty(String)
 
         failOnDuplicates = project.objects.property(Boolean)
         failOnUnusedFirstLevelDependencies = project.objects.property(Boolean)

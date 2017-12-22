@@ -28,6 +28,7 @@ import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -117,6 +118,46 @@ class DependencyAnalysisTask extends DefaultTask {
 
     void setFailOnUnusedTransitiveDependencies(Provider<Boolean> failOnUnusedTransitiveDependencies) {
         this.failOnUnusedTransitiveDependencies.set(failOnUnusedTransitiveDependencies)
+    }
+
+    /**
+     * excludeDublicatePatterns to exclude special classes - necessary for special interfaces
+     */
+
+    final ListProperty<String> excludeDuplicatePatterns = project.objects.listProperty(String)
+
+    @Optional
+    @Input
+    List<String> getExcludeDuplicatePatterns() {
+        return excludeDuplicatePatterns.getOrElse([])
+    }
+
+    void setExcludeDuplicatePatterns(List<String> excludeDuplicatePatterns) {
+        this.excludeDuplicatePatterns.set(excludeDuplicatePatterns)
+    }
+
+    void setExcludeDuplicatePatterns(Provider<List<String>> excludeDuplicatePatterns) {
+        this.excludeDuplicatePatterns.set(excludeDuplicatePatterns)
+    }
+
+    /**
+     * excludeDublicatePatterns to exclude special classes - necessary for special interfaces
+     */
+
+    final ListProperty<String> excludeDependencyPatterns = project.objects.listProperty(String)
+
+    @Optional
+    @Input
+    List<String> getExcludeDependencyPatterns() {
+        return excludeDependencyPatterns.getOrElse([])
+    }
+
+    void setExcludeDependencyPatterns(List<String> excludeDependencyPatterns) {
+        this.excludeDependencyPatterns.set(excludeDependencyPatterns)
+    }
+
+    void setExcludeDependencyPatterns(Provider<List<String>> excludeDependencyPatterns) {
+        this.excludeDependencyPatterns.set(excludeDependencyPatterns)
     }
 
     /**
@@ -245,6 +286,8 @@ class DependencyAnalysisTask extends DefaultTask {
         libArtifacts.each {Artifact a ->
             artifacts.each {
                 Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
+                cleanedList(il, getExcludeDuplicatePatterns())
+
                 if(il.size() > 0) {
                     it.dublicatedClasses.addAll(il)
                     a.dublicatedClasses.addAll(il)
@@ -258,6 +301,8 @@ class DependencyAnalysisTask extends DefaultTask {
         getFirstLevelArtifacts().each { Artifact a ->
             artifacts.each {
                 Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
+                cleanedList(il, getExcludeDuplicatePatterns())
+
                 if(il.size() > 0) {
                     it.dublicatedClasses.addAll(il)
                     a.dublicatedClasses.addAll(il)
@@ -274,6 +319,8 @@ class DependencyAnalysisTask extends DefaultTask {
             } else {
                 artifacts.each {
                     Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
+                    cleanedList(il, getExcludeDuplicatePatterns())
+
                     if(il.size() > 0) {
                         it.dublicatedClasses.addAll(il)
                         a.dublicatedClasses.addAll(il)
@@ -302,10 +349,14 @@ class DependencyAnalysisTask extends DefaultTask {
 		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
 		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
 
+        artifacts.each { Artifact a ->
+            configureIgnore(a, getExcludeDependencyPatterns())
+        }
+
         Set<Artifact> duplicates = artifacts.findAll{ it.dublicatedClasses.size() > 0 || it.dublicatedArtifacts.size() > 0 }
-        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 }
-        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 }
-        Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 }
+        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 && ! it.ignoreForAnalysis }
+        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
+        Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
 
         String output = ''
 
@@ -338,6 +389,20 @@ class DependencyAnalysisTask extends DefaultTask {
             }
         }
 	}
+
+    static List<String> cleanedList(Collection<String> input, List<String> exclude) {
+        exclude.each {String excludePattern ->
+            input.removeAll { it.matches(excludePattern) }
+        }
+    }
+
+    static void configureIgnore(Artifact a, List<String> exclude) {
+        exclude.each {
+            if(a.getName().matches(it)) {
+                a.setIgnoreForAnalysis(true)
+            }
+        }
+    }
 
     void addFile(Artifact artifact) {
         Configuration config = project.configurations.detachedConfiguration(project.dependencies.create(artifact.toString())).setTransitive(false)

@@ -44,6 +44,11 @@ if (project.version.endsWith('-SNAPSHOT')) {
     status = 'snapshot'
 }
 
+test {
+    // Gradle versions for test
+    systemProperty 'intershop.gradle.versions', '4.3.1'
+}
+
 task copyAsciiDoc {
     def outputDir = file("$buildDir/tmp/asciidoctorSrc")
     def inputFiles = fileTree(dir: rootDir, include: '**/*.asciidoc')
