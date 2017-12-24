@@ -46,7 +46,7 @@ if (project.version.endsWith('-SNAPSHOT')) {
 
 test {
     // Gradle versions for test
-    systemProperty 'intershop.gradle.versions', '4.3.1'
+    systemProperty 'intershop.gradle.versions', '4.4'
 }
 
 task copyAsciiDoc {
