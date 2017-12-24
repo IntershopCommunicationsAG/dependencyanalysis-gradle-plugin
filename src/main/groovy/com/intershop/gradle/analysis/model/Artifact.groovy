@@ -46,6 +46,8 @@ class Artifact implements Serializable {
     Set<String> dublicatedClasses = []
     Set<Artifact> dublicatedArtifacts = []
 
+	boolean ignoreForAnalysis
+
 	String configuration
 
     int transitive
@@ -64,6 +66,7 @@ class Artifact implements Serializable {
 		this.configuration = configuration
 
 		this.transitive = 0
+        this.ignoreForAnalysis = false
 	}
 
     /**

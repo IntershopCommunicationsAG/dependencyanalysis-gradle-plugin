@@ -1,5 +1,5 @@
 = Dependency Analysis Plugin
-:latestRevision: 3.0.0
+:latestRevision: 3.1.0
 :toc:
 :icons: font
 
@@ -58,6 +58,8 @@ This plugin adds an extension *`dependencyAnalysis`* to the project. This extens
 |*failOnUnusedFirstLevelDependencies* |`boolean`    |`true`  | The build will fail if there are unused dependencies configured.
 |*failOnUsedTransitiveDependencies*   |`boolean`    |`true`  | If transitive dependencies are used, the build will fail.
 |*failOnUnusedTransitiveDependencies* |`boolean`    |`false` | If unused transitive dependencies are available, the build will fail.
+|*excludeDuplicatePatterns*           |`List<String>` |`[]`  | List of exclude pattern for duplicates
+|*excludeDependencyPatterns*          |`List<String>` |`[]`  | List of exclude pattern for dependencies (pattern must contain also patterns for the version)
 |*enabled*              |`boolean`    |`true`  | If this property is true, the task is added and the project will be verified.
 |*sourceset*            |`String`     |`main`  | The name of the source set which is used for this check.
 |===

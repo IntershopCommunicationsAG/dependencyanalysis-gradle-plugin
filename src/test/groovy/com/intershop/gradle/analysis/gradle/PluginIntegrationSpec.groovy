@@ -30,7 +30,7 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
     }
 
     @Unroll
-	def "analyse for project without issues"() {
+	def 'analyse for project without issues - #gradleVersion'(gradleVersion) {
 		given:
         buildFile << """
             plugins {
@@ -66,16 +66,20 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
         when:
         List<String> tasksArgs = ['build', '-s']
 
-        def tasksResult = getPreparedGradleRunner()
+        getPreparedGradleRunner()
                 .withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
                 .build()
 
 		then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 
 	@Unroll
-	def "analyse for project not failOnErrors"() {
+	def 'analyse for project not failOnErrors - #gradleVersion'(gradleVersion) {
 		given:
         buildFile << """
             plugins {
@@ -123,16 +127,20 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
         when:
         List<String> tasksArgs = ['build', '-s']
 
-        def tasksResult = getPreparedGradleRunner()
+        getPreparedGradleRunner()
                 .withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 
     @Unroll
-    def "analyse for project not failOnErrors with duplicates"() {
+    def 'analyse for project not failOnErrors with duplicates - #gradleVersion'(gradleVersion) {
         given:
         (new File(testProjectDir, 'src/main/java/com/test/api/checker/tests/ASMHelloWorld.java')).delete()
 
@@ -182,16 +190,20 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
         when:
         List<String> tasksArgs = ['build', '-s']
 
-        def tasksResult = getPreparedGradleRunner()
+        getPreparedGradleRunner()
                 .withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
     }
 
 	@Unroll
-	def "analyse for project failOnErrors"() {
+	def 'analyse for project failOnErrors - #gradleVersion'(gradleVersion) {
 		given:
         buildFile << """
             plugins {
@@ -232,16 +244,82 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
         when:
         List<String> tasksArgs = ['build', '-s']
 
-        def tasksResult = getPreparedGradleRunner()
+        getPreparedGradleRunner()
                 .withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
                 .buildAndFail()
 
         then:
         new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 
 	@Unroll
-	def "analyse for project failOnErrors with java-library plugin"() {
+	def 'analyse for project - exclude dublicates - #gradleVersion'(gradleVersion) {
+		given:
+		buildFile << """
+            plugins {
+                id 'java'
+                id 'com.intershop.gradle.dependencyanalysis'
+            }
+
+			version = '1.0.0'
+			group = 'com.test.gradle'
+
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
+
+            
+            dependencyAnalysis {
+                excludeDuplicatePatterns = ['^org.objectweb.asm.*']
+                excludeDependencyPatterns = ['net.sf.ehcache:ehcache-core:.*', 
+                                             'org.springframework:spring-web:.*']
+            }
+            
+            repositories {
+                jcenter()
+            }
+
+			dependencies {
+				compile 'com.google.code.findbugs:annotations:3.0.0'
+				compile 'javax.persistence:persistence-api:1.0.2'
+				compile 'javax.validation:validation-api:1.0.0.GA'
+				compile 'commons-logging:commons-logging:1.2'
+				compile 'org.ow2.asm:asm:5.1'
+				compile 'org.slf4j:slf4j-api:1.7.21'
+				compile 'junit:junit:4.12'
+				compile('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
+
+				//not necessary for compilation
+				compile 'net.sf.ehcache:ehcache-core:2.6.11'
+				compile 'org.springframework:spring-web:4.1.6.RELEASE'
+
+                // double classes
+                compile 'org.ow2.asm:asm-all:4.2'
+			}
+		""".stripIndent()
+
+		when:
+		List<String> tasksArgs = ['build', '-s']
+
+        getPreparedGradleRunner()
+				.withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
+				.build()
+
+		then:
+		new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
+	}
+
+	@Unroll
+	def 'analyse for project failOnErrors with java-library plugin - #gradleVersion'(gradleVersion) {
 		given:
 		buildFile << """
             plugins {
@@ -283,16 +361,20 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 		when:
 		List<String> tasksArgs = ['build', '-s']
 
-		def tasksResult = getPreparedGradleRunner()
+		getPreparedGradleRunner()
 				.withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
 				.buildAndFail()
 
 		then:
 		new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 
 	@Unroll
-	def "analyse for project disabled"() {
+	def 'analyse for project disabled - #gradleVersion'(gradleVersion) {
 		given:
         buildFile << """
             plugins {
@@ -339,22 +421,19 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 
         def tasksResult = getPreparedGradleRunner()
                 .withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
                 .build()
 
         then:
         ! new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
-
-        ! tasksResult.output.contains('Warnings:')
-        ! tasksResult.output.contains('Errors:')
-        ! tasksResult.output.contains('Warnings:')
-        ! tasksResult.output.contains('Errors:')
-
         ! tasksResult.output.contains(':test_new:dependencyAnalysis')
-			
+
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 
 	@Unroll
-	def "analyse for project without java"() {
+	def 'analyse for project without java - #gradleVersion'(gradleVersion) {
 		given:
 		buildFile << """
             plugins {
@@ -370,17 +449,14 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 
 		def tasksResult = getPreparedGradleRunner()
 				.withArguments(tasksArgs)
+                .withGradleVersion(gradleVersion)
 				.build()
 
 		then:
 		! new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
-
-		! tasksResult.output.contains('Warnings:')
-		! tasksResult.output.contains('Errors:')
-		! tasksResult.output.contains('Warnings:')
-		! tasksResult.output.contains('Errors:')
-
 		! tasksResult.output.contains(':test_new:dependencyAnalysis')
 
+        where:
+        gradleVersion << supportedGradleVersions
 	}
 }
