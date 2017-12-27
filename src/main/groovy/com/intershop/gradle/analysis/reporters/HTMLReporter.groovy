@@ -50,7 +50,7 @@ class HTMLReporter {
         Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 }
         Set<Artifact> used = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() < 2 }
         Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 1 }
-        Set<Artifact> duplicateUsed = artifacts.findAll { it.usedClasses.size() > 0 &&  it.dublicatedArtifacts.size() > 0 }
+        Set<Artifact> duplicateUsed = artifacts.findAll { it.usedClasses.size() > 0 && it.dublicatedArtifacts.size() > 0 }
 
         int errors = duplicateUsed.size() + unused.findAll { it.transitive == 0 }.size()
         int warnings = unused.findAll { it.transitive > 0 }.size() + usedTransitive.size()
