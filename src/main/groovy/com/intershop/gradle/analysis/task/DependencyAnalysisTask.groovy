@@ -348,7 +348,6 @@ class DependencyAnalysisTask extends DefaultTask {
 
         artifacts.each { Artifact a ->
             configureIgnore(a, getExcludeDependencyPatterns(), getExcludeDuplicatePatterns())
-
         }
 
 		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
@@ -358,6 +357,10 @@ class DependencyAnalysisTask extends DefaultTask {
         Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 && ! it.ignoreForAnalysis }
         Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
         Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
+
+        duplicates.each {
+            println it.getName()
+        }
 
         String output = ''
 
@@ -409,7 +412,7 @@ class DependencyAnalysisTask extends DefaultTask {
             if(a.getDublicatedClasses().size() > 0) {
                 a.getDublicatedClasses().removeAll {it.matches(excludeDup)}
             }
-            if(a.getDublicatedClasses().size() > 0) {
+            if(a.getDublicatedClasses().size() == 0) {
                 a.dublicatedArtifacts = []
             }
         }
