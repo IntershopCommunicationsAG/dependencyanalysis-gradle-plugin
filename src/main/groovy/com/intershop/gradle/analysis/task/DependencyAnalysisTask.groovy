@@ -353,19 +353,15 @@ class DependencyAnalysisTask extends DefaultTask {
 		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
 		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
 
-        Set<Artifact> duplicates = artifacts.findAll{ it.dublicatedClasses.size() > 0 && ! it.ignoreForAnalysis }
+        Set<Artifact> duplicates = artifacts.findAll{ it.usedClasses.size() > 0 && it.dublicatedArtifacts.size() > 0 && ! it.ignoreForAnalysis }
         Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 && ! it.ignoreForAnalysis }
         Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
         Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
 
-        duplicates.each {
-            println it.getName()
-        }
-
         String output = ''
 
         if( duplicates.size() > 0) {
-            output += "  There are dublicate classes (${duplicates.size() / 2})" + '\n'
+            output += "  There are used dublicate classes (${duplicates.size() / 2})" + '\n'
         }
         if( unused.size() > 0) {
             output += "  There are unused dependencies (${unused.size()})" + '\n'
