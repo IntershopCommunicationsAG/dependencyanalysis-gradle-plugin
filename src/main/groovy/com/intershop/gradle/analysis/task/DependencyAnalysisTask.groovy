@@ -347,7 +347,8 @@ class DependencyAnalysisTask extends DefaultTask {
 		}
 
         artifacts.each { Artifact a ->
-            configureIgnore(a, getExcludeDependencyPatterns())
+            configureIgnore(a, getExcludeDependencyPatterns(), getExcludeDuplicatePatterns())
+
         }
 
 		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
@@ -398,10 +399,18 @@ class DependencyAnalysisTask extends DefaultTask {
         }
     }
 
-    static void configureIgnore(Artifact a, List<String> exclude) {
-        exclude.each {
+    static void configureIgnore(Artifact a, List<String> excludeDeps, List<String> excludeDuplicates) {
+        excludeDeps.each {
             if(a.getName().matches(it)) {
                 a.setIgnoreForAnalysis(true)
+            }
+        }
+        excludeDuplicates.each { String excludeDup ->
+            if(a.getDublicatedClasses().size() > 0) {
+                a.getDublicatedClasses().removeAll {it.matches(excludeDup)}
+            }
+            if(a.getDublicatedClasses().size() > 0) {
+                a.dublicatedArtifacts = []
             }
         }
     }
