@@ -345,15 +345,15 @@ class DependencyAnalysisTask extends DefaultTask {
                 }
 			}
 		}
-		
-		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
-		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
 
         artifacts.each { Artifact a ->
             configureIgnore(a, getExcludeDependencyPatterns())
         }
 
-        Set<Artifact> duplicates = artifacts.findAll{ it.dublicatedClasses.size() > 0 || it.dublicatedArtifacts.size() > 0 }
+		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
+		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
+
+        Set<Artifact> duplicates = artifacts.findAll{ it.dublicatedClasses.size() > 0 && ! it.ignoreForAnalysis }
         Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 && ! it.ignoreForAnalysis }
         Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
         Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
@@ -361,7 +361,7 @@ class DependencyAnalysisTask extends DefaultTask {
         String output = ''
 
         if( duplicates.size() > 0) {
-            output += "  There are dublicates (${duplicates.size()})" + '\n'
+            output += "  There are dublicate classes (${duplicates.size() / 2})" + '\n'
         }
         if( unused.size() > 0) {
             output += "  There are unused dependencies (${unused.size()})" + '\n'
@@ -390,9 +390,11 @@ class DependencyAnalysisTask extends DefaultTask {
         }
 	}
 
-    static List<String> cleanedList(Collection<String> input, List<String> exclude) {
+    static void cleanedList(Collection<String> input, List<String> exclude) {
         exclude.each {String excludePattern ->
-            input.removeAll { it.matches(excludePattern) }
+            input.removeAll {
+                it.matches(excludePattern)
+            }
         }
     }
 

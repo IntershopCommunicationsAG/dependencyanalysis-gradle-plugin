@@ -272,8 +272,8 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 			targetCompatibility = 1.8
 
             
-            dependencyAnalysis {
-                excludeDuplicatePatterns = ['^org.objectweb.asm.*']
+            dependencyAnalysis {                
+                excludeDuplicatePatterns = ['org.objectweb.asm.*']
                 excludeDependencyPatterns = ['net.sf.ehcache:ehcache-core:.*', 
                                              'org.springframework:spring-web:.*']
             }
