@@ -361,7 +361,7 @@ class DependencyAnalysisTask extends DefaultTask {
         String output = ''
 
         if( duplicates.size() > 0) {
-            output += "  There are used dublicate classes (${duplicates.size() / 2})" + '\n'
+            output += "  There are dublicate classes in used dependencies (${duplicates.size() / 2})" + '\n'
         }
         if( unused.size() > 0) {
             output += "  There are unused dependencies (${unused.size()})" + '\n'
