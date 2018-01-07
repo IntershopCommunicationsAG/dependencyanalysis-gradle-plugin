@@ -27,64 +27,56 @@ import java.util.zip.ZipFile
 @Slf4j
 class Artifact implements Serializable {
 
-	private File absoluteFile
+	private Set<File> files
 
-	void setAbsoluteFile(File absoluteFile) {
-		this.absoluteFile = absoluteFile
-		containedClasses = getClassFiles(absoluteFile)
+	void addFile(File file) {
+		this.files.add(file)
+		containedClasses = getClassFiles(file)
 	}
 
-	File getAbsoluteFile() {
-		return absoluteFile
+	Set<File> getFiles() {
+		return files
 	}
 
+    String configuration
+
+	String group
 	String module
 	String version
 	Set<String> containedClasses = []
     Set<String> usedClasses = []
 
-    Set<String> dublicatedClasses = []
-    Set<Artifact> dublicatedArtifacts = []
+    Set<String> duplicatedClasses = []
+    Set<String> excludedDuplicatedClasses = []
+    Set<Artifact> duplicatedArtifacts = []
+    Set<Artifact> excludedDuplicatedArtifacts = []
 
 	boolean ignoreForAnalysis
+    boolean projectDependeny
+    boolean libraryDependency
+    boolean firstLevel
 
-	String configuration
-
-    int transitive
+    String projectPath
 
 	/**
 	 * Constructor
 	 *
 	 * @param absoluteFile  File representation
 	 * @param module        Module name
-	 * @param version       Version
 	 * @param isTransitive  Dependency resolution
 	 */
-	Artifact(String module, String version, String configuration) {
+	Artifact(String group, String module, String configuration) {
+        this.group = group
 		this.module = module
-		this.version = version
 		this.configuration = configuration
 
-		this.transitive = 0
+		this.projectDependeny = false
+        this.libraryDependency = false
+
         this.ignoreForAnalysis = false
-	}
+        this.firstLevel = false
 
-    /**
-     * Constructor
-     *
-     * @param absoluteFile  File representation
-     * @param module        Module name
-     * @param version       Version
-     * @param isTransitive  Dependency resolution
-     */
-	Artifact(File absoluteFile, String module, String version, String configuration) {
-		this.absoluteFile = absoluteFile
-		this.module = module
-		this.version = version
-		this.configuration = configuration
-
-		this.transitive = 0
-		containedClasses = getClassFiles(absoluteFile)
+        this.files = [] as HashSet
 	}
 
     void setTransitive(int value) {
@@ -92,7 +84,7 @@ class Artifact implements Serializable {
     }
 
 	String getName() {
-		return "${module}:${version}"
+		return "${group}:${module}:${version}"
 	}	
 	
 	Set<String> getContainedClasses() {
@@ -104,7 +96,14 @@ class Artifact implements Serializable {
      */
     @Override
     String toString() {
-        return "${module}:${version}"
+        if(projectPath) {
+            return projectPath
+        }
+		else if(version) {
+			return "${group}:${module}:${version}"
+		} else {
+			return "${group}:${module}:${version}"
+		}
     }
 
     /**
@@ -115,10 +114,36 @@ class Artifact implements Serializable {
         if (!(other instanceof Artifact)) {
             return false
         }
-        return (((Artifact)other).getModule() == module &&
-                ((Artifact)other).getVersion() == version &&
-                ((Artifact)other).absoluteFile == absoluteFile &&
-                ((Artifact)other).configuration == configuration)
+        boolean rv = false
+
+        rv = rv && ((Artifact)other).getGroup() == group
+        if(!rv) return false
+
+        rv = ((Artifact)other).getModule() == module
+        if(!rv) return false
+
+        rv = ((Artifact)other).getVersion() == version
+        if(!rv) return false
+
+        rv = ((Artifact)other).getConfiguration() == configuration
+        if(!rv) return false
+
+        rv = ((Artifact)other).getProjectPath() == projectPath
+        if(!rv) return false
+
+        rv = ((Artifact)other).getFiles().size() == files.size()
+        if(!rv) return false
+
+        Collection<File> similar = new HashSet<File>( ((Artifact)other).getFiles() )
+        Collection<File> different = new HashSet<File>()
+        different.addAll( ((Artifact)other).getFiles() )
+        different.addAll( files )
+
+        similar.retainAll( files )
+        different.removeAll( similar )
+
+        return different.isEmpty()
+
     }
 
     /**
@@ -128,10 +153,18 @@ class Artifact implements Serializable {
     int hashCode() {
         int hash = 5
         hash = 97 * hash + configuration.hashCode()
+        hash = 97 * hash + group.hashCode()
         hash = 97 * hash + module.hashCode()
-        hash = 97 * hash + version.hashCode()
-        if(absoluteFile) {
-            hash = 97 * hash + absoluteFile.getAbsolutePath().hashCode()
+		if(version) {
+			hash = 97 * hash + version.hashCode()
+		}
+        if(projectPath) {
+            hash = 97 * hash + projectPath.hashCode()
+        }
+        if(! files.isEmpty()) {
+            files.each {
+                hash = 97 * hash + it.getAbsolutePath().hashCode()
+            }
         }
         return hash
     }

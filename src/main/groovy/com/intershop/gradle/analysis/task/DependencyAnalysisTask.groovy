@@ -15,6 +15,7 @@
  */
 package com.intershop.gradle.analysis.task
 
+
 import com.intershop.gradle.analysis.model.Artifact
 import com.intershop.gradle.analysis.model.ProjectArtifact
 import com.intershop.gradle.analysis.reporters.HTMLReporter
@@ -22,10 +23,6 @@ import groovy.transform.CompileStatic
 import org.apache.commons.collections4.CollectionUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.ResolvedArtifact
-import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ListProperty
@@ -179,69 +176,20 @@ class DependencyAnalysisTask extends DefaultTask {
     }
 
     /**
-     * Resolved dependencies
+     * List of Artifacts
      */
-    @Input
-    Set<Artifact> getFirstLevelArtifacts() {
-        Set<Artifact> artifacts = new HashSet()
+    final ListProperty<Artifact> artifacts = project.objects.listProperty(Artifact)
 
-        Configuration compile = project.getConfigurations().findByName('compile')
-        if(compile) {
-            compile.getResolvedConfiguration().getFirstLevelModuleDependencies().each { ResolvedDependency rd ->
-                rd.getModuleArtifacts().each {
-                    Artifact a = new Artifact(it.getFile().getAbsoluteFile(),
-                            it.getModuleVersion().getId().getModule().toString(),
-                            it.getModuleVersion().getId().getVersion(),
-                            'compile')
-                    artifacts.add(a)
-                }
-            }
-        }
-
-        return artifacts
+    void setArtifacts(List<Artifact> newArtifacts) {
+        this.artifacts.set(newArtifacts)
     }
 
-    @Input
-    Set<Artifact> getJavaLibraryDependencies() {
-        Set<Artifact> artifacts = new HashSet()
-
-        Configuration api = project.getConfigurations().findByName('api')
-        Configuration implementation = project.getConfigurations().findByName('implementation')
-
-        if(api) {
-            api.dependencies.each { Dependency dep ->
-                Artifact a = new Artifact("${dep.group}:${dep.name}".toString(),
-                        dep.getVersion(),
-                        'api')
-                artifacts.add(a)
-            }
-        }
-        if(implementation) {
-            implementation.dependencies.each { Dependency dep ->
-                Artifact a = new Artifact("${dep.group}:${dep.name}".toString(),
-                        dep.getVersion(),
-                        'implementation')
-                artifacts.add(a)
-            }
-        }
-
-        return artifacts
+    void setArtifacts(ListProperty<Artifact> artifacts) {
+        this.artifacts.set(artifacts)
     }
 
-    @Input
-    Set<Artifact> getResolvedArtifacts() {
-        Set<Artifact> artifacts = new HashSet()
-
-        Configuration compile = project.getConfigurations().findByName('compile')
-        if(compile) {
-            compile.getResolvedConfiguration().getResolvedArtifacts().each { ResolvedArtifact ra ->
-                Artifact a = new Artifact(ra.getFile().getAbsoluteFile(),
-                        ra.getModuleVersion().getId().getModule().toString(),
-                        ra.getModuleVersion().getId().getVersion(), 'compile')
-                artifacts.add(a)
-            }
-        }
-        return artifacts
+    List<Artifact> getArtifacts() {
+        return this.artifacts.get()
     }
 
     /**
@@ -278,63 +226,43 @@ class DependencyAnalysisTask extends DefaultTask {
 		Set<Artifact> artifacts = new HashSet()
 		def projectArtifacts = []
 
-        Set<Artifact> libArtifacts = getJavaLibraryDependencies()
-        libArtifacts.each {Artifact a ->
-            addFile(a)
-        }
-
-        libArtifacts.each {Artifact a ->
+        getArtifacts().findAll({it.firstLevel}).each { Artifact a ->
             artifacts.each {
                 Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
                 cleanedList(il, getExcludeDuplicatePatterns())
 
                 if(il.size() > 0) {
-                    it.dublicatedClasses.addAll(il)
-                    a.dublicatedClasses.addAll(il)
-                    it.dublicatedArtifacts.add(a)
-                    a.dublicatedArtifacts.add(it)
+                    it.duplicatedClasses.addAll(il)
+                    a.duplicatedClasses.addAll(il)
+                    it.duplicatedArtifacts.add(a)
+                    a.duplicatedArtifacts.add(it)
                 }
             }
             artifacts.add(a)
         }
 
-        getFirstLevelArtifacts().each { Artifact a ->
-            artifacts.each {
-                Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
-                cleanedList(il, getExcludeDuplicatePatterns())
+        getArtifacts().findAll({! it.firstLevel}).each { Artifact a ->
 
-                if(il.size() > 0) {
-                    it.dublicatedClasses.addAll(il)
-                    a.dublicatedClasses.addAll(il)
-                    it.dublicatedArtifacts.add(a)
-                    a.dublicatedArtifacts.add(it)
-                }
-            }
-            artifacts.add(a)
-        }
-
-        resolvedArtifacts.each { Artifact a ->
-            if(artifacts.contains(a)) {
-                a.setTransitive(1)
-            } else {
                 artifacts.each {
                     Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
                     cleanedList(il, getExcludeDuplicatePatterns())
 
                     if(il.size() > 0) {
-                        it.dublicatedClasses.addAll(il)
-                        a.dublicatedClasses.addAll(il)
-                        it.dublicatedArtifacts.add(a)
-                        a.dublicatedArtifacts.add(it)
+                        it.duplicatedClasses.addAll(il)
+                        a.duplicatedClasses.addAll(il)
+                        it.duplicatedArtifacts.add(a)
+                        a.duplicatedArtifacts.add(it)
                     }
                 }
-                a.setTransitive(2)
-            }
+
             artifacts.add(a)
 		}
 		
 		getBase().getFiles().each {File f ->
-			projectArtifacts.add(new ProjectArtifact(f, project.getGroup().toString(), project.getVersion().toString(), false))
+            ProjectArtifact pa = new ProjectArtifact(project.getGroup().toString(), project.getName())
+            pa.addFile(f)
+            pa.setVersion(project.getVersion().toString())
+			projectArtifacts.add(pa)
 		}
 		
 		projectArtifacts.each { Object pa ->
@@ -350,32 +278,34 @@ class DependencyAnalysisTask extends DefaultTask {
             configureIgnore(a, getExcludeDependencyPatterns(), getExcludeDuplicatePatterns())
         }
 
-		HTMLReporter reporter = new HTMLReporter(artifacts, projectArtifacts)
-		reporter.createReport(getHtmlReport(), project.name, project.version.toString())
+        Set<Artifact> duplicates = artifacts.findAll{ it.usedClasses.size() > 0 && it.duplicatedArtifacts.size() > 0 }
+        Set<Artifact> excludedDuplicates = artifacts.findAll{ it.excludedDuplicatedClasses.size() > 0 && it.excludedDuplicatedArtifacts.size() > 0 }
+        Set<Artifact> used = artifacts.findAll{ it.usedClasses.size() > 0 && it.firstLevel && it.duplicatedArtifacts.size() == 0 }
+        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.firstLevel }
+        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && ! it.firstLevel }
+        Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && ! it.firstLevel }
 
-        Set<Artifact> duplicates = artifacts.findAll{ it.usedClasses.size() > 0 && it.dublicatedArtifacts.size() > 0 && ! it.ignoreForAnalysis }
-        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.transitive == 0 && ! it.ignoreForAnalysis }
-        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
-        Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && it.getTransitive() > 0 && ! it.ignoreForAnalysis }
+        HTMLReporter reporter = new HTMLReporter(used, unused, usedTransitive, unusedTranstive, duplicates, excludedDuplicates, projectArtifacts)
+        reporter.createReport(getHtmlReport(), project.name, project.version.toString())
 
         String output = ''
 
-        if( duplicates.size() > 0) {
+        if( duplicates.findAll({! it.ignoreForAnalysis}).size() > 0) {
             output += "  There are dublicate classes in used dependencies (${duplicates.size() / 2})" + '\n'
         }
-        if( unused.size() > 0) {
+        if( unused.findAll({! it.ignoreForAnalysis}).size() > 0) {
             output += "  There are unused dependencies (${unused.size()})" + '\n'
         }
-        if(usedTransitive.size() > 0) {
+        if(usedTransitive.findAll({! it.ignoreForAnalysis}).size() > 0) {
             output += "  There are used transitive dependencies (${usedTransitive.size()})" + '\n'
         }
 
         boolean fail = false
 
-        fail = fail || (duplicates.size() > 0 && getFailOnDuplicates())
-        fail = fail || (unused.size() > 0 && getFailOnUnusedFirstLevelDependencies())
-        fail = fail || (usedTransitive.size() > 0 && getFailOnUsedTransitiveDependencies())
-        fail = fail || (unusedTranstive.size() > 0 && getFailOnUnusedTransitiveDependencies())
+        fail = fail || (duplicates.findAll({! it.ignoreForAnalysis}).size() > 0 && getFailOnDuplicates())
+        fail = fail || (unused.findAll({! it.ignoreForAnalysis}).size() > 0 && getFailOnUnusedFirstLevelDependencies())
+        fail = fail || (usedTransitive.findAll({! it.ignoreForAnalysis}).size() > 0 && getFailOnUsedTransitiveDependencies())
+        fail = fail || (unusedTranstive.findAll({! it.ignoreForAnalysis}).size() > 0 && getFailOnUnusedTransitiveDependencies())
 
         if(fail) {
             throw new GradleException("""
@@ -405,23 +335,14 @@ class DependencyAnalysisTask extends DefaultTask {
             }
         }
         excludeDuplicates.each { String excludeDup ->
-            if(a.getDublicatedClasses().size() > 0) {
-                a.getDublicatedClasses().removeAll {it.matches(excludeDup)}
+            if(a.getDuplicatedClasses().size() > 0) {
+                a.getExcludedDuplicatedClasses().addAll(a.getDuplicatedClasses().findAll {it.matches(excludeDup)})
+                a.getDuplicatedClasses().removeAll(a.getExcludedDuplicatedClasses())
             }
-            if(a.getDublicatedClasses().size() == 0) {
-                a.dublicatedArtifacts = []
-            }
-        }
-    }
-
-    void addFile(Artifact artifact) {
-        Configuration config = project.configurations.detachedConfiguration(project.dependencies.create(artifact.toString())).setTransitive(false)
-        config.resolvedConfiguration.getResolvedArtifacts().each { ResolvedArtifact ra ->
-            if(ra.getFile().getName().endsWith('.jar')) {
-                artifact.setAbsoluteFile(ra.getFile())
+            if(a.getDuplicatedClasses().size() == 0) {
+                a.getExcludedDuplicatedArtifacts().addAll(a.duplicatedArtifacts)
+                a.duplicatedArtifacts = [] as Set<Artifact>
             }
         }
     }
-	
-
 }
