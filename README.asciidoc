@@ -1,5 +1,5 @@
 = Dependency Analysis Plugin
-:latestRevision: 3.2.0
+:latestRevision: 3.3.0
 :toc:
 :icons: font
 

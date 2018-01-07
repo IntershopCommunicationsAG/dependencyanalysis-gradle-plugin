@@ -27,7 +27,12 @@ import groovy.xml.MarkupBuilder
 @CompileStatic
 class HTMLReporter {
 	
-	private Set<Artifact> artifacts = []
+	private Set<Artifact> used = []
+	private Set<Artifact> unused = []
+    private Set<Artifact> usedTransitive = []
+    private Set<Artifact> unusedTranstive = []
+    private Set<Artifact> duplicates = []
+    private Set<Artifact> excludedDuplicates = []
 	private Set<ProjectArtifact> projectArtifacts = []
 
     /**
@@ -36,8 +41,15 @@ class HTMLReporter {
      * @param artifacts
      * @param projectArtifacts
      */
-	HTMLReporter(Set<Artifact> artifacts, List<ProjectArtifact>  projectArtifacts ) {
-		this.artifacts.addAll(artifacts)
+	HTMLReporter(Set<Artifact> used, Set<Artifact> unused, Set<Artifact> usedTransitive,
+                 Set<Artifact> unusedTranstive, Set<Artifact> duplicates,
+                 Set<Artifact> excludedDuplicates, List<ProjectArtifact>  projectArtifacts ) {
+		this.used = used
+        this.unused = unused
+        this.usedTransitive = usedTransitive
+        this.unusedTranstive = unusedTranstive
+        this.duplicates = duplicates
+        this.excludedDuplicates = excludedDuplicates
 		this.projectArtifacts.addAll(projectArtifacts)
 	}
 
@@ -47,15 +59,10 @@ class HTMLReporter {
 		writer.write('<!DOCTYPE html>')
 		def builder = new MarkupBuilder(writer)
 
-        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 }
-        Set<Artifact> used = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() < 2 }
-        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && it.getTransitive() > 1 }
-        Set<Artifact> duplicateUsed = artifacts.findAll { it.usedClasses.size() > 0 && it.dublicatedArtifacts.size() > 0 }
+        int errors = duplicates.findAll({! it.ignoreForAnalysis}).size() + unused.findAll({! it.ignoreForAnalysis}).size()
+        int warnings = unusedTranstive.findAll({! it.ignoreForAnalysis}).size() + usedTransitive.findAll({! it.ignoreForAnalysis}).size()
 
-        int errors = duplicateUsed.size() + unused.findAll { it.transitive == 0 }.size()
-        int warnings = unused.findAll { it.transitive > 0 }.size() + usedTransitive.size()
-
-		int infos = used.findAll { it.dublicatedArtifacts.size() == 0 }.size()
+		int infos = used.findAll { it.duplicatedArtifacts.size() == 0 }.size()
 		
 		builder.html {
 			head {
@@ -122,46 +129,81 @@ class HTMLReporter {
 						}
 						
 						tbody {
-                            duplicateUsed.each {  Artifact a ->
-								tr {
-									td { span(class: 'error', "Used, but contains duplicates") }
-									String list = ''
-									a.dublicatedArtifacts.each {Artifact ad ->
-										list += list ? ';' : ''
-										list += "${ad.module}:${ad.version}"
-									}
-									td {
-										p("${a.module}:${a.version} (see also ${list})")
-										p('Duplicate classes')
-										ul {
-											a.dublicatedClasses.each{ classname ->
-												li {
-													mkp.yield classname
-												}
-											}
-										}
-									}
-								}
-							}
-                            unused.findAll { it.transitive == 0 && it.dublicatedArtifacts.size() == 0 }.each {  Artifact a ->
+                            duplicates.each {  Artifact a ->
                                 tr {
-                                    td { span(class: 'error', "Not used") }
-                                    td "${a.module}:${a.version}"
+                                    td { span(class: 'error', "Used, but contains duplicates") }
+                                    String list = ''
+                                    a.duplicatedArtifacts.each { Artifact ad ->
+                                        list += list ? ';' : ''
+                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                    }
+                                    td {
+                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p('Duplicate classes')
+                                        ul {
+                                            a.duplicatedClasses.each{ classname ->
+                                                li {
+                                                    mkp.yield classname
+                                                }
+                                            }
+                                        }
+                                        if(a.excludedDuplicatedClasses.size() > 0) {
+                                            p('Excluded duplicate classes')
+                                            ul {
+                                                a.excludedDuplicatedClasses.each { classname ->
+                                                    li {
+                                                        mkp.yield classname
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                            unused.findAll { it.transitive == 0 && it.dublicatedArtifacts.size() > 0 }.each {  Artifact a ->
+                            excludedDuplicates.each {  Artifact a ->
+                                tr {
+                                    td { span(class: 'info', "Used, but contains duplicates (excluded") }
+                                    String list = ''
+                                    a.excludedDuplicates.each { Artifact ad ->
+                                        list += list ? ';' : ''
+                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                    }
+                                    td {
+                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p('Excluded duplicate classes')
+                                        ul {
+                                            a.excludedDuplicatedClasses.each{ classname ->
+                                                li {
+                                                    mkp.yield classname
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            unused.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
+                                tr {
+                                    if(a.ignoreForAnalysis) {
+                                        td { span(class: 'info', "Not used (excluded)") }
+                                    } else {
+                                        td { span(class: 'error', "Not used") }
+                                    }
+                                    td "${a.group}:${a.module}:${a.version}"
+                                }
+                            }
+                            unused.findAll { it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
                                 tr {
                                     td { span(class: 'error', "Not used (duplicate classes)") }
 									String list = ''
-									a.dublicatedArtifacts.each {Artifact ad ->
+									a.duplicatedArtifacts.each { Artifact ad ->
 										list += list ? ';' : ''
-										list += "${ad.module}:${ad.version}"
+										list += "${ad.group}:${ad.module}:${ad.version}"
 									}
                                     td {
-										p("${a.module}:${a.version} (see also ${list})")
+										p("${a.group}:${a.module}:${a.version} (see also ${list})")
 										p('Duplicate classes')
 										ul {
-											a.dublicatedClasses.each{ classname ->
+											a.duplicatedClasses.each{ classname ->
 												li {
 													mkp.yield classname
 												}
@@ -173,24 +215,28 @@ class HTMLReporter {
 
                             usedTransitive.each {  Artifact a ->
 								tr {
-									td { span(class: 'warning', "Used, but from transitive dependencies") }
-									td "${a.module}:${a.version}"
+                                    if(a.ignoreForAnalysis) {
+                                        td { span(class: 'info', "Used, but from transitive dependencies (excluded)") }
+                                    } else {
+                                        td { span(class: 'warning', "Used, but from transitive dependencies") }
+                                    }
+									td "${a.group}:${a.module}:${a.version}"
 								}
 							}
-                            unused.findAll { it.transitive > 0}.each {  Artifact a ->
+                            unusedTranstive.each {  Artifact a ->
                                 tr {
                                     td { span(class: 'warning', "Not used (transitive)") }
-                                    td "${a.module}:${a.version}"
+                                    td "${a.group}:${a.module}:${a.version}"
                                 }
                             }
 
-							used.findAll { it.dublicatedArtifacts.size() == 0 }.each {  Artifact a ->
+							used.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
 								tr {
 									td {
 										span(class: 'info', "Used for '${a.configuration}'")
 									}
 									td {
-										mkp.yield "${a.module}:${a.version}"
+										mkp.yield "${a.group}:${a.module}:${a.version}"
 										ul {
 											a.usedClasses.each{ classname ->
 												li {
@@ -214,9 +260,9 @@ class HTMLReporter {
 						}
 
 						tbody {
-							used.findAll{ it.dublicatedArtifacts.size() == 0 }.each {  Artifact a ->
+							used.findAll{ it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
 								tr {
-									td "${a.module}:${a.version}"
+									td "${a.group}:${a.module}:${a.version}"
 									td {
 										ul {
 											a.usedClasses.each {String classname ->
@@ -237,7 +283,7 @@ class HTMLReporter {
 									}
 								}
 							}
-                            used.findAll{ it.dublicatedArtifacts.size() > 0 }.each {  Artifact a ->
+                            used.findAll{ it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
                                 tr {
                                     td { span(class: 'error', "${a.module}:${a.version}") }
                                     td {

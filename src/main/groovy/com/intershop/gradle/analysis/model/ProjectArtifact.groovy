@@ -35,11 +35,14 @@ import java.util.zip.ZipFile
 class ProjectArtifact extends Artifact {
 
 	Map<String, Set<String>> dependencyMap = [:]
-	
-	ProjectArtifact(File absoluteFile, String module, String version, boolean isTransitive) {
-		super(absoluteFile, module, version, 'project')
-		
-		dependencyMap.putAll(getAnalyzedClasses(absoluteFile))
+
+	ProjectArtifact(String group, String module) {
+		super(group, module, 'project')
+	}
+
+	void addFile(File file) {
+		super.addFile(file)
+		dependencyMap.putAll(getAnalyzedClasses(file))
 	}
 	
 	Set<String> getAllDependencyClasses() {
