@@ -36,6 +36,15 @@ group 'com.intershop.gradle.dependencyanalysis'
 description 'Gradle dependency analysis plugin'
 version = scm.version.version
 
+gradlePlugin {
+    plugins {
+        dependencyanalysisplugin {
+            id = 'com.intershop.gradle.dependencyanalysis'
+            implementationClass = 'com.intershop.gradle.analysis.DependencyAnalysisPlugin'
+        }
+    }
+}
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -194,8 +203,8 @@ pluginBundle {
     tags = ['intershop', 'gradle', 'plugin', 'dependency', 'analysis']
 
     plugins {
-        gradleTestPlugin {
-            id = 'com.intershop.gradle.dependencyanalysis'
+        dependencyanalysisplugin {
+            id = gradlePlugin.plugins.dependencyanalysisplugin.id
             displayName = project.description
         }
     }
