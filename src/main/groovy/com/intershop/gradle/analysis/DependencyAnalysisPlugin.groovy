@@ -85,7 +85,7 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 project.getConfigurations().all(new Action<Configuration>() {
                     @Override
                     void execute(final Configuration conf) {
-                        if(conf.getState() == Configuration.State.UNRESOLVED) {
+                        if(conf.getState() == Configuration.State.UNRESOLVED && conf.getName() == 'compileClasspath') {
                             conf.getIncoming().afterResolve(new Action<ResolvableDependencies>() {
                                 @Override
                                 void execute(ResolvableDependencies resolvableDependencies) {
@@ -100,7 +100,7 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
 
                                     for(ResolvedArtifactResult rar: resolvableDependencies.getArtifacts()) {
 
-                                        if(rar.getVariant().getAttributes().getAttribute(new Attribute('artifactType', String)) == 'jar') {
+                                        if(rar.getVariant().getAttributes().getAttribute(Attribute.of('artifactType', String)) == 'jar') {
                                             File f = rar.file
                                             ComponentIdentifier ci = rar.getId().getComponentIdentifier()
 
@@ -153,7 +153,6 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                                         }
 
                                     }
-
                                     analysisTask.setArtifacts(artifactMap.values().asList())
                                 }
                             })

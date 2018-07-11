@@ -46,7 +46,7 @@ if (project.version.endsWith('-SNAPSHOT')) {
 
 test {
     // Gradle versions for test
-    systemProperty 'intershop.gradle.versions', '4.4'
+    systemProperty 'intershop.gradle.versions', '4.6'
 }
 
 task copyAsciiDoc {
@@ -202,7 +202,7 @@ pluginBundle {
 }
 
 dependencies {
-    compile 'org.ow2.asm:asm:6.0'
+    compile 'org.ow2.asm:asm:6.2'
     compile 'org.apache.commons:commons-collections4:4.1'
 
     testCompile 'com.intershop.gradle.test:test-gradle-plugin:3.0.0'

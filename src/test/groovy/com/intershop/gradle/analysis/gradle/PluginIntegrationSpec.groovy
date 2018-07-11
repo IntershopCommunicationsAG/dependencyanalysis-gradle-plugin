@@ -37,6 +37,16 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
                 id 'java'
                 id 'com.intershop.gradle.dependencyanalysis'
             }
+            
+            dependencyAnalysis {
+                failOnDuplicates = false
+                failOnUnusedFirstLevelDependencies = false
+                failOnUsedTransitiveDependencies = false
+                failOnUnusedTransitiveDependencies = false
+                
+                excludeDuplicatePatterns = ['javax.persistence.*']
+                excludeDependencyPatterns = ['com.intershop:api_remote_service:.*']
+            }
 
 			version = '1.0.0.0'
 			group = 'com.test.gradle'
