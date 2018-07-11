@@ -225,7 +225,6 @@ class DependencyAnalysisTask extends DefaultTask {
 	void analyze() {
 		Set<Artifact> artifacts = new HashSet()
 		def projectArtifacts = []
-
         getArtifacts().findAll({it.firstLevel}).each { Artifact a ->
             artifacts.each {
                 Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
