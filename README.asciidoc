@@ -3,7 +3,7 @@
 :toc:
 :icons: font
 
-NOTE: Version 3 of this plugin will only work with Gradle 4 and JDK 8.
+NOTE: Version 3.4.0 (and later) of this plugin will work with Gradle 4.5 (and later) and JDK 8.
 
 == Summary
 This plugin identifies unused dependencies of a project and it detects duplicate classes in dependencies.

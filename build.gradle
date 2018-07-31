@@ -12,10 +12,10 @@ plugins {
     id 'maven-publish'
 
     // intershop version plugin
-    id 'com.intershop.gradle.scmversion' version '3.5.0'
+    id 'com.intershop.gradle.scmversion' version '3.6.0'
 
     // plugin for documentation
-    id 'org.asciidoctor.convert' version '1.5.7'
+    id 'org.asciidoctor.convert' version '1.5.8.1'
 
     // plugin for publishing to Gradle Portal
     id 'com.gradle.plugin-publish' version '0.9.10'
@@ -55,7 +55,7 @@ if (project.version.endsWith('-SNAPSHOT')) {
 
 test {
     // Gradle versions for test
-    systemProperty 'intershop.gradle.versions', '4.6'
+    systemProperty 'intershop.gradle.versions', '4.6,4.9'
 }
 
 task copyAsciiDoc {
