@@ -16,7 +16,8 @@ class AnalyzedFileDependency extends AbstractAnalyzedDependency {
         return path
     }
 
-    String getDisplayName() {
+    String getName() {
         return getIdentifier()
     }
+
 }

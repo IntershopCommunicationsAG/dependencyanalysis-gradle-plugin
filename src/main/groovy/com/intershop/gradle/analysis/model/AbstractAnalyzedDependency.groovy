@@ -36,8 +36,8 @@ abstract class AbstractAnalyzedDependency implements AnalyzedDependency {
 
     Set<String> duplicatedClasses = []
     Set<String> excludedDuplicatedClasses = []
-    Set<? extends AbstractAnalyzedDependency> duplicatedArtifacts = []
-    Set<? extends AbstractAnalyzedDependency> excludedDuplicatedArtifacts = []
+    Set<AnalyzedDependency> duplicatedArtifacts = []
+    Set<AnalyzedDependency> excludedDuplicatedArtifacts = []
 
     boolean ignoreForAnalysis
     boolean projectDependeny
@@ -54,14 +54,9 @@ abstract class AbstractAnalyzedDependency implements AnalyzedDependency {
         transitive = value
     }
 
-    String getName() {
-        return "${group}:${module}:${version}"
-    }
-
     Set<String> getContainedClasses() {
         return containedClasses
     }
-
 
     /**
      * {@inheritDoc}
@@ -173,6 +168,5 @@ abstract class AbstractAnalyzedDependency implements AnalyzedDependency {
 
 
     abstract String getIdentifier()
-
-    abstract String getDisplayName()
+    abstract String getName()
 }

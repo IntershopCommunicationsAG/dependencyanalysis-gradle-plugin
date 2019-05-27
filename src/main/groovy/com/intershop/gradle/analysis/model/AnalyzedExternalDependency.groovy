@@ -36,7 +36,7 @@ class AnalyzedExternalDependency extends AbstractAnalyzedDependency {
         return "${group}:${module}".toString()
     }
 
-    String getDisplayName() {
+    String getName() {
         if (version) {
             return "${group}:${module}:${version}"
         } else {
