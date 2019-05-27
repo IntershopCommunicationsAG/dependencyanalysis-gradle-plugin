@@ -15,7 +15,9 @@
  */
 package com.intershop.gradle.analysis.gradle
 
+import com.intershop.gradle.analysis.gradle.fixtures.JarArchiveCreator
 import com.intershop.gradle.test.AbstractIntegrationSpec
+import spock.lang.IgnoreRest
 import spock.lang.Unroll
 
 class PluginIntegrationSpec extends AbstractIntegrationSpec {
@@ -384,6 +386,65 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 	}
 
 	@Unroll
+	def 'analyse for project failOnErrors with file collection dependencies - #gradleVersion'(gradleVersion) {
+
+		given:
+		def jar = someJar()
+		buildFile << """
+            plugins {
+                id 'java-library'
+                id 'com.intershop.gradle.dependencyanalysis'
+            }
+
+			version = '1.0.0'
+			group = 'com.test.gradle'
+
+			sourceCompatibility = 1.8
+			targetCompatibility = 1.8
+
+            repositories {
+                jcenter()
+            }
+
+			dependencies {
+				
+				api 'com.google.code.findbugs:annotations:3.0.0'
+				api 'javax.persistence:persistence-api:1.0.2'
+				api 'javax.validation:validation-api:1.0.0.GA'
+				api 'org.ow2.asm:asm:5.1'
+				api 'org.slf4j:slf4j-api:1.7.21'
+				
+				api 'junit:junit:4.12'
+				api('com.netflix.servo:servo-atlas:0.12.11') {
+					transitive = false
+				}
+				api 'commons-logging:commons-logging:1.2'
+
+				// unrequired plain file dependency				
+				api files('${jar.name}')
+			}
+		""".stripIndent()
+
+		when:
+		List<String> tasksArgs = ['build', '-s']
+
+		getPreparedGradleRunner()
+				.withArguments(tasksArgs)
+				.withGradleVersion(gradleVersion)
+				.buildAndFail()
+
+		def htmlReport = new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html')
+		then:
+		htmlReport.exists()
+
+		// unused plain file reference is listed in dependency report
+		htmlReport.text.contains(jar.absolutePath)
+
+		where:
+		gradleVersion << supportedGradleVersions
+	}
+
+	@Unroll
 	def 'analyse for project disabled - #gradleVersion'(gradleVersion) {
 		given:
         buildFile << """
@@ -468,5 +529,11 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 
         where:
         gradleVersion << supportedGradleVersions
+	}
+
+
+	private File someJar(String fileName = "someJar.jar") {
+		def file = new File(testProjectDir, fileName)
+		new JarArchiveCreator().createJar(file);
 	}
 }
