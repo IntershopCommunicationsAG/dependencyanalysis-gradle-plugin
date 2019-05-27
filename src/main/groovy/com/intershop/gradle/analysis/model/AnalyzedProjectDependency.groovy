@@ -27,17 +27,17 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 /**
- * Project artifact implementation
+ * Project dependency implementation
  * Extends artifact with additional information.
  */
 @CompileStatic
 @Slf4j
-class ProjectArtifact extends Artifact {
+class AnalyzedProjectDependency extends AnalyzedExternalDependency {
 
 	Map<String, Set<String>> dependencyMap = [:]
 
-	ProjectArtifact(String group, String module) {
-		super(group, module, 'project')
+	AnalyzedProjectDependency(String group, String module, String configuration) {
+		super(group, module, configuration)
 	}
 
 	void addFile(File file) {

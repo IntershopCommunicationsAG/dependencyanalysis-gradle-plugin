@@ -15,9 +15,9 @@
  */
 package com.intershop.gradle.analysis.task
 
-
-import com.intershop.gradle.analysis.model.Artifact
-import com.intershop.gradle.analysis.model.ProjectArtifact
+import com.intershop.gradle.analysis.model.AbstractAnalyzedDependency
+import com.intershop.gradle.analysis.model.AnalyzedExternalDependency
+import com.intershop.gradle.analysis.model.AnalyzedProjectDependency
 import com.intershop.gradle.analysis.reporters.HTMLReporter
 import groovy.transform.CompileStatic
 import org.apache.commons.collections4.CollectionUtils
@@ -178,17 +178,17 @@ class DependencyAnalysisTask extends DefaultTask {
     /**
      * List of Artifacts
      */
-    final ListProperty<Artifact> artifacts = project.objects.listProperty(Artifact)
+    final ListProperty<AbstractAnalyzedDependency> artifacts = project.objects.listProperty(AbstractAnalyzedDependency)
 
-    void setArtifacts(List<Artifact> newArtifacts) {
+    void setArtifacts(List<AbstractAnalyzedDependency> newArtifacts) {
         this.artifacts.set(newArtifacts)
     }
 
-    void setArtifacts(ListProperty<Artifact> artifacts) {
+    void setArtifacts(ListProperty<AbstractAnalyzedDependency> artifacts) {
         this.artifacts.set(artifacts)
     }
 
-    List<Artifact> getArtifacts() {
+    List<AbstractAnalyzedDependency> getArtifacts() {
         return this.artifacts.get()
     }
 
@@ -223,9 +223,9 @@ class DependencyAnalysisTask extends DefaultTask {
      */
 	@TaskAction
 	void analyze() {
-		Set<Artifact> artifacts = new HashSet()
-		def projectArtifacts = []
-        getArtifacts().findAll({it.firstLevel}).each { Artifact a ->
+		Set<AbstractAnalyzedDependency> artifacts = new HashSet<AbstractAnalyzedDependency>()
+		Set projectArtifacts = []
+        getArtifacts().findAll({it.firstLevel}).each { AbstractAnalyzedDependency a ->
             artifacts.each {
                 Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
                 cleanedList(il, getExcludeDuplicatePatterns())
@@ -240,7 +240,7 @@ class DependencyAnalysisTask extends DefaultTask {
             artifacts.add(a)
         }
 
-        getArtifacts().findAll({! it.firstLevel}).each { Artifact a ->
+        getArtifacts().findAll({! it.firstLevel}).each { AbstractAnalyzedDependency a ->
 
                 artifacts.each {
                     Collection<String> il = CollectionUtils.intersection(it.containedClasses, a.containedClasses)
@@ -258,14 +258,14 @@ class DependencyAnalysisTask extends DefaultTask {
 		}
 		
 		getBase().getFiles().each {File f ->
-            ProjectArtifact pa = new ProjectArtifact(project.getGroup().toString(), project.getName())
+            AnalyzedProjectDependency pa = new AnalyzedProjectDependency(project.getGroup().toString(), project.getName(), null)
             pa.addFile(f)
             pa.setVersion(project.getVersion().toString())
 			projectArtifacts.add(pa)
 		}
 		
 		projectArtifacts.each { Object pa ->
-            ((ProjectArtifact)pa).getAllDependencyClasses().each {String classname ->
+            ((AnalyzedProjectDependency)pa).getAllDependencyClasses().each { String classname ->
                 artifacts.findAll {it.containedClasses.contains(classname)}.each {
                     it.usedClasses.add(classname)
                     project.logger.debug("Add used for ${classname} to ${it}")
@@ -273,16 +273,16 @@ class DependencyAnalysisTask extends DefaultTask {
 			}
 		}
 
-        artifacts.each { Artifact a ->
+        artifacts.each { AbstractAnalyzedDependency a ->
             configureIgnore(a, getExcludeDependencyPatterns(), getExcludeDuplicatePatterns())
         }
 
-        Set<Artifact> duplicates = artifacts.findAll{ it.usedClasses.size() > 0 && it.duplicatedArtifacts.size() > 0 }
-        Set<Artifact> excludedDuplicates = artifacts.findAll{ it.excludedDuplicatedClasses.size() > 0 && it.excludedDuplicatedArtifacts.size() > 0 }
-        Set<Artifact> used = artifacts.findAll{ it.usedClasses.size() > 0 && it.firstLevel && it.duplicatedArtifacts.size() == 0 }
-        Set<Artifact> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.firstLevel }
-        Set<Artifact> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && ! it.firstLevel }
-        Set<Artifact> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && ! it.firstLevel }
+        Set<AbstractAnalyzedDependency> duplicates = artifacts.findAll{ it.usedClasses.size() > 0 && it.duplicatedArtifacts.size() > 0 }
+        Set<AbstractAnalyzedDependency> excludedDuplicates = artifacts.findAll{ it.excludedDuplicatedClasses.size() > 0 && it.excludedDuplicatedArtifacts.size() > 0 }
+        Set<AbstractAnalyzedDependency> used = artifacts.findAll{ it.usedClasses.size() > 0 && it.firstLevel && it.duplicatedArtifacts.size() == 0 }
+        Set<AbstractAnalyzedDependency> unused = artifacts.findAll{ it.usedClasses.size() == 0 && it.firstLevel }
+        Set<AbstractAnalyzedDependency> usedTransitive = artifacts.findAll{ it.usedClasses.size() > 0 && ! it.firstLevel }
+        Set<AbstractAnalyzedDependency> unusedTranstive = artifacts.findAll{ it.usedClasses.size() < 1 && ! it.firstLevel }
 
         HTMLReporter reporter = new HTMLReporter(used, unused, usedTransitive, unusedTranstive, duplicates, excludedDuplicates, projectArtifacts)
         reporter.createReport(getHtmlReport(), project.name, project.version.toString())
@@ -314,7 +314,7 @@ class DependencyAnalysisTask extends DefaultTask {
                 """.stripIndent(16))
         } else {
             if(output) {
-                println "-- Dependency Analysis" + '\n' + output
+                println "-- AnalyzedExternalDependency Analysis" + '\n' + output
             }
         }
 	}
@@ -327,7 +327,7 @@ class DependencyAnalysisTask extends DefaultTask {
         }
     }
 
-    static void configureIgnore(Artifact a, List<String> excludeDeps, List<String> excludeDuplicates) {
+    static void configureIgnore(AbstractAnalyzedDependency a, List<String> excludeDeps, List<String> excludeDuplicates) {
         excludeDeps.each {
             if(a.getName().matches(it)) {
                 a.setIgnoreForAnalysis(true)
@@ -340,7 +340,7 @@ class DependencyAnalysisTask extends DefaultTask {
             }
             if(a.getDuplicatedClasses().size() == 0) {
                 a.getExcludedDuplicatedArtifacts().addAll(a.duplicatedArtifacts)
-                a.duplicatedArtifacts = [] as Set<Artifact>
+                a.duplicatedArtifacts = [] as Set<AbstractAnalyzedDependency>
             }
         }
     }

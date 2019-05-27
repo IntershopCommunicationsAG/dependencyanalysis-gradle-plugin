@@ -15,8 +15,9 @@
  */
 package com.intershop.gradle.analysis.reporters
 
-import com.intershop.gradle.analysis.model.Artifact
-import com.intershop.gradle.analysis.model.ProjectArtifact
+import com.intershop.gradle.analysis.model.AbstractAnalyzedDependency
+import com.intershop.gradle.analysis.model.AnalyzedExternalDependency
+import com.intershop.gradle.analysis.model.AnalyzedProjectDependency
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
@@ -27,13 +28,13 @@ import groovy.xml.MarkupBuilder
 @CompileStatic
 class HTMLReporter {
 	
-	private Set<Artifact> used = []
-	private Set<Artifact> unused = []
-    private Set<Artifact> usedTransitive = []
-    private Set<Artifact> unusedTranstive = []
-    private Set<Artifact> duplicates = []
-    private Set<Artifact> excludedDuplicates = []
-	private Set<ProjectArtifact> projectArtifacts = []
+	private final Set<AbstractAnalyzedDependency> used
+	private final Set<AbstractAnalyzedDependency> unused
+    private final Set<AbstractAnalyzedDependency> usedTransitive
+    private final Set<AbstractAnalyzedDependency> unusedTranstive
+    private final Set<AbstractAnalyzedDependency> duplicates
+    private final Set<AbstractAnalyzedDependency> excludedDuplicates
+	private final Set<AbstractAnalyzedDependency> projectArtifacts
 
     /**
      * Constructs this reporter
@@ -41,16 +42,16 @@ class HTMLReporter {
      * @param artifacts
      * @param projectArtifacts
      */
-	HTMLReporter(Set<Artifact> used, Set<Artifact> unused, Set<Artifact> usedTransitive,
-                 Set<Artifact> unusedTranstive, Set<Artifact> duplicates,
-                 Set<Artifact> excludedDuplicates, List<ProjectArtifact>  projectArtifacts ) {
+	HTMLReporter(Set<AbstractAnalyzedDependency> used, Set<AbstractAnalyzedDependency> unused, Set<AbstractAnalyzedDependency> usedTransitive,
+				 Set<AbstractAnalyzedDependency> unusedTranstive, Set<AbstractAnalyzedDependency> duplicates,
+				 Set<AbstractAnalyzedDependency> excludedDuplicates, Set<AbstractAnalyzedDependency>  projectArtifacts ) {
 		this.used = used
         this.unused = unused
         this.usedTransitive = usedTransitive
         this.unusedTranstive = unusedTranstive
         this.duplicates = duplicates
         this.excludedDuplicates = excludedDuplicates
-		this.projectArtifacts.addAll(projectArtifacts)
+		this.projectArtifacts = projectArtifacts
 	}
 
     @CompileDynamic
@@ -100,7 +101,7 @@ class HTMLReporter {
 			}
 			body {
 				div(id: "content") {
-					h1 "Dependency Report - ${projectName}-${projectVersion}"
+					h1 "AnalyzedExternalDependency Report - ${projectName}-${projectVersion}"
 					div(id: "summary") {
 						table {
 							tr {
@@ -124,21 +125,21 @@ class HTMLReporter {
 						thead {
 							tr {
 								th ''
-								th 'Dependency Moduls'
+								th 'AnalyzedExternalDependency Moduls'
 							}
 						}
 						
 						tbody {
-                            duplicates.each {  Artifact a ->
+                            duplicates.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'error', "Used, but contains duplicates") }
                                     String list = ''
-                                    a.duplicatedArtifacts.each { Artifact ad ->
+                                    a.duplicatedArtifacts.each { AbstractAnalyzedDependency ad ->
                                         list += list ? ';' : ''
-                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                        list += "${ad.displayName}"
                                     }
                                     td {
-                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p("${a.displayName} (see also ${list})")
                                         p('Duplicate classes')
                                         ul {
                                             a.duplicatedClasses.each{ classname ->
@@ -160,16 +161,16 @@ class HTMLReporter {
                                     }
                                 }
                             }
-                            excludedDuplicates.each {  Artifact a ->
+                            excludedDuplicates.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'info', "Used, but contains duplicates (excluded") }
                                     String list = ''
-                                    a.excludedDuplicates.each { Artifact ad ->
+                                    a.excludedDuplicates.each { AnalyzedExternalDependency ad ->
                                         list += list ? ';' : ''
-                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                        list += "${ad.displayName}"
                                     }
                                     td {
-                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p("${a.identifier} (see also ${list})")
                                         p('Excluded duplicate classes')
                                         ul {
                                             a.excludedDuplicatedClasses.each{ classname ->
@@ -181,26 +182,26 @@ class HTMLReporter {
                                     }
                                 }
                             }
-                            unused.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
+                            unused.findAll { it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     if(a.ignoreForAnalysis) {
                                         td { span(class: 'info', "Not used (excluded)") }
                                     } else {
                                         td { span(class: 'error', "Not used") }
                                     }
-                                    td "${a.group}:${a.module}:${a.version}"
+                                    td "${a.displayName}"
                                 }
                             }
-                            unused.findAll { it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
+                            unused.findAll { it.duplicatedArtifacts.size() > 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'error', "Not used (duplicate classes)") }
 									String list = ''
-									a.duplicatedArtifacts.each { Artifact ad ->
+									a.duplicatedArtifacts.each { AbstractAnalyzedDependency ad ->
 										list += list ? ';' : ''
-										list += "${ad.group}:${ad.module}:${ad.version}"
+										list += "${ad.displayName}"
 									}
                                     td {
-										p("${a.group}:${a.module}:${a.version} (see also ${list})")
+										p("${a.identifier} (see also ${list})")
 										p('Duplicate classes')
 										ul {
 											a.duplicatedClasses.each{ classname ->
@@ -213,30 +214,30 @@ class HTMLReporter {
                                 }
                             }
 
-                            usedTransitive.each {  Artifact a ->
+                            usedTransitive.each { AbstractAnalyzedDependency a ->
 								tr {
                                     if(a.ignoreForAnalysis) {
                                         td { span(class: 'info', "Used, but from transitive dependencies (excluded)") }
                                     } else {
                                         td { span(class: 'warning', "Used, but from transitive dependencies") }
                                     }
-									td "${a.group}:${a.module}:${a.version}"
+									td "${a.displayName}"
 								}
 							}
-                            unusedTranstive.each {  Artifact a ->
+                            unusedTranstive.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'warning', "Not used (transitive)") }
-                                    td "${a.group}:${a.module}:${a.version}"
+                                    td "${a.displayName}"
                                 }
                             }
 
-							used.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
+							used.findAll { it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
 								tr {
 									td {
 										span(class: 'info', "Used for '${a.configuration}'")
 									}
 									td {
-										mkp.yield "${a.group}:${a.module}:${a.version}"
+										mkp.yield "${a.displayName}"
 										ul {
 											a.usedClasses.each{ classname ->
 												li {
@@ -260,16 +261,16 @@ class HTMLReporter {
 						}
 
 						tbody {
-							used.findAll{ it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
+							used.findAll{ it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
 								tr {
-									td "${a.group}:${a.module}:${a.version}"
+									td "${a.displayName}"
 									td {
 										ul {
 											a.usedClasses.each {String classname ->
 												li {
 													mkp.yield classname
 													ul {
-														projectArtifacts.each {ProjectArtifact pa ->
+														projectArtifacts.each { AbstractAnalyzedDependency pa ->
 															pa.getDependencyMap().each { prjClass, depSet ->
 																depSet.findAll { it == classname }.each {
 																	li prjClass
@@ -283,7 +284,7 @@ class HTMLReporter {
 									}
 								}
 							}
-                            used.findAll{ it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
+                            used.findAll{ it.duplicatedArtifacts.size() > 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'error', "${a.module}:${a.version}") }
                                     td {
@@ -292,7 +293,7 @@ class HTMLReporter {
                                                 li {
                                                     mkp.yield classname
                                                     ul {
-                                                        projectArtifacts.each {ProjectArtifact pa ->
+                                                        projectArtifacts.each { AbstractAnalyzedDependency pa ->
                                                             pa.getDependencyMap().each { prjClass, depSet ->
                                                                 depSet.findAll { it == classname }.each {
                                                                     li prjClass

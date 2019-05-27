@@ -15,14 +15,10 @@
  */
 package com.intershop.gradle.analysis
 
-import org.gradle.api.artifacts.component.ComponentIdentifier
-import org.gradle.api.artifacts.component.LibraryBinaryIdentifier
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.attributes.Attribute
 import com.intershop.gradle.analysis.extension.DependencyAnalysisExtension
-
-import com.intershop.gradle.analysis.model.Artifact
+import com.intershop.gradle.analysis.model.AnalyzedExternalDependency
+import com.intershop.gradle.analysis.model.AnalyzedFileDependency
+import com.intershop.gradle.analysis.model.AnalyzedProjectDependency
 import com.intershop.gradle.analysis.task.DependencyAnalysisTask
 import org.gradle.api.Action
 import org.gradle.api.Plugin
@@ -30,8 +26,14 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.FileCollectionDependency
 import org.gradle.api.artifacts.ResolvableDependencies
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.component.LibraryBinaryIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
@@ -39,13 +41,14 @@ import org.gradle.api.plugins.ReportingBasePlugin
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifier
 
 /**
  * Implementation of the plugin
  */
 class DependencyAnalysisPlugin implements Plugin<Project> {
 
-	private static final String DEPENDENCIESCHECK = 'dependencyAnalysis'
+    private static final String DEPENDENCIESCHECK = 'dependencyAnalysis'
 
     /**
      * Applies this prokugin to the project
@@ -55,7 +58,7 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
         //applies the Base reporting pluging
         project.plugins.apply(ReportingBasePlugin)
 
-        DependencyAnalysisExtension extension = project.extensions.findByType(DependencyAnalysisExtension) ?:   project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension, project)
+        DependencyAnalysisExtension extension = project.extensions.findByType(DependencyAnalysisExtension) ?: project.extensions.create(DEPENDENCIESCHECK, DependencyAnalysisExtension, project)
 
         extension.reportsDir = project.extensions.getByType(ReportingExtension).file(DEPENDENCIESCHECK)
 
@@ -85,34 +88,33 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 project.getConfigurations().all(new Action<Configuration>() {
                     @Override
                     void execute(final Configuration conf) {
-                        if(conf.getState() == Configuration.State.UNRESOLVED && conf.getName() == 'compileClasspath') {
+                        if (conf.getState() == Configuration.State.UNRESOLVED && conf.getName() == 'compileClasspath') {
                             conf.getIncoming().afterResolve(new Action<ResolvableDependencies>() {
                                 @Override
                                 void execute(ResolvableDependencies resolvableDependencies) {
-                                    Map<String, Artifact> artifactMap = [:] as HashMap
+                                    Map<String, AnalyzedExternalDependency> artifactMap = [:] as HashMap
 
                                     for (Dependency dependency : resolvableDependencies.getDependencies()) {
-                                        Artifact a = new Artifact(dependency.group, dependency.name, conf.getName())
-                                        a.setFirstLevel(true)
-                                        a.setVersion(dependency.getVersion() ?: '')
-                                        artifactMap.put("${dependency.group}:${dependency.name}".toString(),a)
+                                        List<AnalyzedExternalDependency> analyzedDependencies = createFirstLevelDependenciesFrom(dependency, conf)
+                                        analyzedDependencies.each { analyzedDep ->
+                                            artifactMap.put("${dependency.group}:${dependency.name}".toString(), analyzedDep)
+                                        }
+
                                     }
 
-                                    for(ResolvedArtifactResult rar: resolvableDependencies.getArtifacts()) {
-
-                                        if(rar.getVariant().getAttributes().getAttribute(Attribute.of('artifactType', String)) == 'jar') {
-                                            File f = rar.file
+                                    for (ResolvedArtifactResult rar : resolvableDependencies.getArtifacts()) {
+                                        if (rar.getVariant().getAttributes().getAttribute(Attribute.of('artifactType', String)) == 'jar') {
                                             ComponentIdentifier ci = rar.getId().getComponentIdentifier()
 
-                                            if(ci instanceof ProjectComponentIdentifier) {
-                                                ProjectComponentIdentifier pci = (ProjectComponentIdentifier)ci
+                                            if (ci instanceof ProjectComponentIdentifier) {
+                                                ProjectComponentIdentifier pci = (ProjectComponentIdentifier) ci
                                                 Project p = project.getRootProject().project(pci.getProjectPath())
 
-                                                Artifact a = artifactMap.get("${p.getGroup()}:${p.getName()}".toString())
+                                                AnalyzedExternalDependency a = artifactMap.get("${p.getGroup()}:${p.getName()}".toString())
 
-                                                if(! a) {
-                                                    a = new Artifact(p.getGroup().toString(), p.getName(), conf.getName())
-                                                    artifactMap.put("${p.getGroup()}:${p.getName()}".toString(),a)
+                                                if (!a) {
+                                                    a = new AnalyzedProjectDependency(p.getGroup().toString(), p.getName(), conf.getName())
+                                                    artifactMap.put("${p.getGroup()}:${p.getName()}".toString(), a)
                                                 }
 
                                                 a.setVersion(p.getVersion())
@@ -121,15 +123,15 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
 
                                                 a.addFile(rar.file)
                                             }
-                                            if(ci instanceof LibraryBinaryIdentifier) {
-                                                LibraryBinaryIdentifier lbi = (LibraryBinaryIdentifier)ci
+                                            if (ci instanceof LibraryBinaryIdentifier) {
+                                                LibraryBinaryIdentifier lbi = (LibraryBinaryIdentifier) ci
                                                 Project p = project.getRootProject().project(lbi.getProjectPath())
 
-                                                Artifact a = artifactMap.get("${p.getGroup()}:${p.getName()}".toString())
+                                                AnalyzedExternalDependency a = artifactMap.get("${p.getGroup()}:${p.getName()}".toString())
 
-                                                if(! a) {
-                                                    a = new Artifact(p.getGroup().toString(), p.getName(), conf.getName())
-                                                    artifactMap.put("${p.getGroup()}:${p.getName()}".toString(),a)
+                                                if (!a) {
+                                                    a = new AnalyzedProjectDependency(p.getGroup().toString(), p.getName(), conf.getName())
+                                                    artifactMap.put("${p.getGroup()}:${p.getName()}".toString(), a)
                                                 }
 
                                                 a.setVersion(p.getVersion())
@@ -138,27 +140,33 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
 
                                                 a.addFile(rar.file)
                                             }
-                                            if(ci instanceof ModuleComponentIdentifier) {
-                                                ModuleComponentIdentifier mci = (ModuleComponentIdentifier)ci
+                                            if (ci instanceof ModuleComponentIdentifier) {
+                                                ModuleComponentIdentifier mci = (ModuleComponentIdentifier) ci
 
-                                                Artifact a = artifactMap.get("${mci.getGroup()}:${mci.getModule()}".toString())
-                                                if(! a) {
-                                                    a = new Artifact(mci.getGroup().toString(), mci.getModule(), conf.getName())
+                                                AnalyzedExternalDependency a = artifactMap.get("${mci.getGroup()}:${mci.getModule()}".toString())
+                                                if (!a) {
+                                                    a = new AnalyzedExternalDependency(mci.getGroup().toString(), mci.getModule(), conf.getName())
                                                     a.setVersion(mci.getVersion() ?: '')
-                                                    artifactMap.put("${mci.getGroup()}:${mci.getModule()}".toString(),a)
+                                                    artifactMap.put("${mci.getGroup()}:${mci.getModule()}".toString(), a)
                                                 }
 
                                                 a.addFile(rar.file)
                                             }
-                                        }
+                                            if (ci instanceof OpaqueComponentArtifactIdentifier) {
+                                                // should already be handled by first level inspection
+                                                // todo: add assert
+                                            }
 
+                                        }
+                                        analysisTask.setArtifacts(artifactMap.values().asList())
                                     }
-                                    analysisTask.setArtifacts(artifactMap.values().asList())
+
                                 }
                             })
                         }
                     }
                 })
+
 
                 analysisTask.onlyIf {
                     extension.getEnabled()
@@ -168,5 +176,19 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 checkTask.dependsOn(analysisTask)
             }
         })
+
     }
+
+    private static List<AnalyzedExternalDependency> createFirstLevelDependenciesFrom(Dependency dependency, Configuration conf) {
+        if (dependency instanceof FileCollectionDependency) {
+            def fileCollectionDependency = (FileCollectionDependency) dependency
+            return fileCollectionDependency.files.collect { new AnalyzedFileDependency(it, conf.name) }
+        } else {
+            def moduleDependency = new AnalyzedExternalDependency(dependency.group, dependency.name, conf.getName())
+            moduleDependency.setFirstLevel(true)
+            moduleDependency.setVersion(dependency.getVersion() ?: '')
+            return [moduleDependency]
+        }
+    }
+
 }
