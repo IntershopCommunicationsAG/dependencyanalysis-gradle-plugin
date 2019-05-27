@@ -84,6 +84,7 @@ class DependencyAnalysisPlugin implements Plugin<Project> {
                 analysisTask.setExcludeDuplicatePatterns(extension.getExcludeDuplicatePatternsProvider())
 
                 analysisTask.setHtmlReportDir(extension.getReportsDirProvider())
+                analysisTask.dependencyReportings = extension.dependencyReportings
 
                 project.getConfigurations().all(new Action<Configuration>() {
                     @Override
