@@ -267,7 +267,7 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 	}
 
 	@Unroll
-	def 'analyse for project - exclude dublicates - #gradleVersion'(gradleVersion) {
+	def 'analyse for project - exclude duplicates - #gradleVersion'(gradleVersion) {
 		given:
 		buildFile << """
             plugins {

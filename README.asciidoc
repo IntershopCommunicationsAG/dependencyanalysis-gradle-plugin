@@ -81,7 +81,7 @@ If the task should not fail there is also an output:
 [source,groovy,subs="attributes"]
 ----
 -- Dependency Analysis
-  There are dublicates (2)
+  There are duplicates (2)
   There are unused dependencies (1)
 ----
 
