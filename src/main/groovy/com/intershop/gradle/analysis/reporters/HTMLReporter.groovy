@@ -101,7 +101,7 @@ class HTMLReporter {
 			}
 			body {
 				div(id: "content") {
-					h1 "AnalyzedExternalDependency Report - ${projectName}-${projectVersion}"
+					h1 "Dependency Report - ${projectName}-${projectVersion}"
 					div(id: "summary") {
 						table {
 							tr {
@@ -125,7 +125,7 @@ class HTMLReporter {
 						thead {
 							tr {
 								th ''
-								th 'AnalyzedExternalDependency Moduls'
+								th 'Dependency Modules'
 							}
 						}
 						

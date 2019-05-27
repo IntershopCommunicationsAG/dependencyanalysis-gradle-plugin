@@ -17,7 +17,6 @@ package com.intershop.gradle.analysis.gradle
 
 import com.intershop.gradle.analysis.gradle.fixtures.JarArchiveCreator
 import com.intershop.gradle.test.AbstractIntegrationSpec
-import spock.lang.IgnoreRest
 import spock.lang.Unroll
 
 class PluginIntegrationSpec extends AbstractIntegrationSpec {
