@@ -42,7 +42,7 @@ class DependencyAnalysisTask extends DefaultTask {
 	static final String REPORT_NAME = 'dependency-report'
 
     /**
-     * Fail on dublicate classes
+     * Fail on duplicate classes
      */
     final Property<Boolean> failOnDuplicates = project.objects.property(Boolean)
 
@@ -118,7 +118,7 @@ class DependencyAnalysisTask extends DefaultTask {
     }
 
     /**
-     * excludeDublicatePatterns to exclude special classes - necessary for special interfaces
+     * excludeDuplicatePatterns to exclude special classes - necessary for special interfaces
      */
 
     final ListProperty<String> excludeDuplicatePatterns = project.objects.listProperty(String)
@@ -138,7 +138,7 @@ class DependencyAnalysisTask extends DefaultTask {
     }
 
     /**
-     * excludeDublicatePatterns to exclude special classes - necessary for special interfaces
+     * excludeDuplicatePatterns to exclude special classes - necessary for special interfaces
      */
 
     final ListProperty<String> excludeDependencyPatterns = project.objects.listProperty(String)
@@ -290,7 +290,7 @@ class DependencyAnalysisTask extends DefaultTask {
         String output = ''
 
         if( duplicates.findAll({! it.ignoreForAnalysis}).size() > 0) {
-            output += "  There are dublicate classes in used dependencies (${duplicates.size() / 2})" + '\n'
+            output += "  There are duplicate classes in used dependencies (${duplicates.size() / 2})" + '\n'
         }
         if( unused.findAll({! it.ignoreForAnalysis}).size() > 0) {
             output += "  There are unused dependencies (${unused.size()})" + '\n'

@@ -46,7 +46,7 @@ class DependencyAnalysisExtension {
     }
 
     /**
-     * Fail on dublicate classes
+     * Fail on duplicate classes
      */
     private final Property<Boolean> failOnDuplicates
 
@@ -63,7 +63,7 @@ class DependencyAnalysisExtension {
     }
 
     /**
-     * Exclude pattern for dublicates
+     * Exclude pattern for duplicates
      */
     private final ListProperty<String> excludeDuplicatePatterns
 
