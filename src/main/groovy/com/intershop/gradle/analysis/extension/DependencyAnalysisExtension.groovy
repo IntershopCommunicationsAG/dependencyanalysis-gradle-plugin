@@ -15,8 +15,11 @@
  */
 package com.intershop.gradle.analysis.extension
 
+import com.intershop.gradle.analysis.task.DependencyReporting
 import groovy.transform.CompileStatic
+import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
@@ -179,6 +182,16 @@ class DependencyAnalysisExtension {
 
     void setSourceset(String sourceset) {
         this.sourceset.set(sourceset)
+    }
+
+    List<Action<DependencyReporting>> dependencyReportings = []
+
+    void dependencyReporting(Action<DependencyReporting> action) {
+        this.dependencyReportings.add(action)
+    }
+
+    void dependencyReporting(Closure<DependencyReporting> closure) {
+        dependencyReporting(new ClosureBackedAction<DependencyReporting>(closure))
     }
 
     DependencyAnalysisExtension(Project project) {

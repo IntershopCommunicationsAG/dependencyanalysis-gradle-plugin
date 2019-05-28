@@ -83,9 +83,9 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
                 .build()
 
 		then:
-        new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+		new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
 
-        where:
+		where:
         gradleVersion << supportedGradleVersions
 	}
 
@@ -113,8 +113,27 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
                 failOnUnusedFirstLevelDependencies = false
                 failOnUsedTransitiveDependencies = false
                 failOnUnusedTransitiveDependencies = false
-            }
 
+            	dependencyReporting { depReport ->
+					File customReportDir = file('build/reports/customDependencyAnalysis/')
+					customReportDir.mkdirs()
+					File unusedDepsReport = new File(customReportDir, 'unused.txt')
+					unusedDepsReport.withPrintWriter { p ->
+						depReport.unused.each { dep ->
+							p.println dep.name
+						}
+					}
+					
+					println "duplicates: " + depReport.duplicates
+					File duplicateDepsReport = new File(customReportDir, 'duplicates.txt')
+					duplicateDepsReport.withPrintWriter { p ->
+						depReport.duplicates.each { dep ->
+							p.println dep.name
+						}
+					}
+            	}
+            }
+            
 			dependencies {
 				compile 'com.google.code.findbugs:annotations:3.0.0'
 				compile 'javax.persistence:persistence-api:1.0.2'
@@ -144,7 +163,7 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
                 .build()
 
         then:
-        new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+		assertGeneratedReports(1, 2)
 
         where:
         gradleVersion << supportedGradleVersions
@@ -534,5 +553,15 @@ class PluginIntegrationSpec extends AbstractIntegrationSpec {
 	private File someJar(String fileName = "someJar.jar") {
 		def file = new File(testProjectDir, fileName)
 		new JarArchiveCreator().createJar(file);
+	}
+
+	def assertGeneratedReports(int unusedDepsCount, int duplicatesCount) {
+		new File(testProjectDir, 'build/reports/dependencyAnalysis/dependency-report.html').exists()
+		def unusedDeps = new File(testProjectDir, 'build/reports/customDependencyAnalysis/unused.txt')
+		assert unusedDeps.readLines().size() == unusedDepsCount
+
+		def duplicateDeps = new File(testProjectDir, 'build/reports/customDependencyAnalysis/duplicates.txt')
+		assert duplicateDeps.readLines().size() == duplicatesCount
+		true
 	}
 }
