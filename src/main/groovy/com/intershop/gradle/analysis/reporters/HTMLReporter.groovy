@@ -15,8 +15,9 @@
  */
 package com.intershop.gradle.analysis.reporters
 
-import com.intershop.gradle.analysis.model.Artifact
-import com.intershop.gradle.analysis.model.ProjectArtifact
+import com.intershop.gradle.analysis.model.AbstractAnalyzedDependency
+import com.intershop.gradle.analysis.model.AnalyzedDependency
+import com.intershop.gradle.analysis.model.AnalyzedExternalDependency
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
@@ -26,14 +27,14 @@ import groovy.xml.MarkupBuilder
  */
 @CompileStatic
 class HTMLReporter {
-	
-	private Set<Artifact> used = []
-	private Set<Artifact> unused = []
-    private Set<Artifact> usedTransitive = []
-    private Set<Artifact> unusedTranstive = []
-    private Set<Artifact> duplicates = []
-    private Set<Artifact> excludedDuplicates = []
-	private Set<ProjectArtifact> projectArtifacts = []
+
+    private final Set<AnalyzedDependency> used
+    private final Set<AnalyzedDependency> unused
+    private final Set<AnalyzedDependency> usedTransitive
+    private final Set<AnalyzedDependency> unusedTranstive
+    private final Set<AnalyzedDependency> duplicates
+    private final Set<AnalyzedDependency> excludedDuplicates
+    private final Set<AnalyzedDependency> projectArtifacts
 
     /**
      * Constructs this reporter
@@ -41,33 +42,33 @@ class HTMLReporter {
      * @param artifacts
      * @param projectArtifacts
      */
-	HTMLReporter(Set<Artifact> used, Set<Artifact> unused, Set<Artifact> usedTransitive,
-                 Set<Artifact> unusedTranstive, Set<Artifact> duplicates,
-                 Set<Artifact> excludedDuplicates, List<ProjectArtifact>  projectArtifacts ) {
-		this.used = used
+    HTMLReporter(Set<AnalyzedDependency> used, Set<AnalyzedDependency> unused, Set<AnalyzedDependency> usedTransitive,
+                 Set<AnalyzedDependency> unusedTranstive, Set<AnalyzedDependency> duplicates,
+                 Set<AnalyzedDependency> excludedDuplicates, Set<AnalyzedDependency> projectArtifacts) {
+        this.used = used
         this.unused = unused
         this.usedTransitive = usedTransitive
         this.unusedTranstive = unusedTranstive
         this.duplicates = duplicates
         this.excludedDuplicates = excludedDuplicates
-		this.projectArtifacts.addAll(projectArtifacts)
-	}
+        this.projectArtifacts = projectArtifacts
+    }
 
     @CompileDynamic
-	void createReport(File reportFile, String projectName, String projectVersion) {
-		Writer writer = new FileWriter(reportFile)
-		writer.write('<!DOCTYPE html>')
-		def builder = new MarkupBuilder(writer)
+    void createReport(File reportFile, String projectName, String projectVersion) {
+        Writer writer = new FileWriter(reportFile)
+        writer.write('<!DOCTYPE html>')
+        def builder = new MarkupBuilder(writer)
 
-        int errors = duplicates.findAll({! it.ignoreForAnalysis}).size() + unused.findAll({! it.ignoreForAnalysis}).size()
-        int warnings = unusedTranstive.findAll({! it.ignoreForAnalysis}).size() + usedTransitive.findAll({! it.ignoreForAnalysis}).size()
+        int errors = duplicates.findAll({ !it.ignoreForAnalysis }).size() + unused.findAll({ !it.ignoreForAnalysis }).size()
+        int warnings = unusedTranstive.findAll({ !it.ignoreForAnalysis }).size() + usedTransitive.findAll({ !it.ignoreForAnalysis }).size()
 
-		int infos = used.findAll { it.duplicatedArtifacts.size() == 0 }.size()
-		
-		builder.html {
-			head {
-				title "Dependency Report - ${projectName}-${projectVersion}"
-				style '''
+        int infos = used.findAll { it.duplicatedArtifacts.size() == 0 }.size()
+
+        builder.html {
+            head {
+                title "Dependency Report - ${projectName}-${projectVersion}"
+                style '''
                         body{margin:0;padding:0;font-family:sans-serif;font-size:12pt;}
                         body,a,a:visited{color:#303030;}
                         #content{padding-left:50px;padding-right:50px;padding-top:30px;padding-bottom:30px;}
@@ -97,57 +98,57 @@ class HTMLReporter {
                         #summary td{vertical-align:top;width:110px;padding-top:15px;padding-bottom:15px;text-align:center;}
                         #summary td p{margin:0;}
                        '''
-			}
-			body {
-				div(id: "content") {
-					h1 "Dependency Report - ${projectName}-${projectVersion}"
-					div(id: "summary") {
-						table {
-							tr {
-								td {
-									p(class: "error", 'ERROR')
-									div errors
-								}
-								td {
-									p(class: "warning", 'WARNING')
-									div warnings
-								}
-								td {
-									p(class: "info", 'INFO')
-									div infos
-								}
-							}
-						}
-					}
-					h2 "Analysed Modules"
-					table(id: "maintable") {
-						thead {
-							tr {
-								th ''
-								th 'Dependency Moduls'
-							}
-						}
-						
-						tbody {
-                            duplicates.each {  Artifact a ->
+            }
+            body {
+                div(id: "content") {
+                    h1 "Dependency Report - ${projectName}-${projectVersion}"
+                    div(id: "summary") {
+                        table {
+                            tr {
+                                td {
+                                    p(class: "error", 'ERROR')
+                                    div errors
+                                }
+                                td {
+                                    p(class: "warning", 'WARNING')
+                                    div warnings
+                                }
+                                td {
+                                    p(class: "info", 'INFO')
+                                    div infos
+                                }
+                            }
+                        }
+                    }
+                    h2 "Analysed Modules"
+                    table(id: "maintable") {
+                        thead {
+                            tr {
+                                th ''
+                                th 'Dependency Modules'
+                            }
+                        }
+
+                        tbody {
+                            duplicates.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'error', "Used, but contains duplicates") }
                                     String list = ''
-                                    a.duplicatedArtifacts.each { Artifact ad ->
+                                    a.duplicatedArtifacts.each { AbstractAnalyzedDependency ad ->
                                         list += list ? ';' : ''
-                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                        list += "${ad.name}"
                                     }
                                     td {
-                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p("${a.name} (see also ${list})")
                                         p('Duplicate classes')
                                         ul {
-                                            a.duplicatedClasses.each{ classname ->
+                                            a.duplicatedClasses.each { classname ->
                                                 li {
                                                     mkp.yield classname
                                                 }
                                             }
                                         }
-                                        if(a.excludedDuplicatedClasses.size() > 0) {
+                                        if (a.excludedDuplicatedClasses.size() > 0) {
                                             p('Excluded duplicate classes')
                                             ul {
                                                 a.excludedDuplicatedClasses.each { classname ->
@@ -160,19 +161,19 @@ class HTMLReporter {
                                     }
                                 }
                             }
-                            excludedDuplicates.each {  Artifact a ->
+                            excludedDuplicates.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'info', "Used, but contains duplicates (excluded") }
                                     String list = ''
-                                    a.excludedDuplicates.each { Artifact ad ->
+                                    a.excludedDuplicates.each { AnalyzedExternalDependency ad ->
                                         list += list ? ';' : ''
-                                        list += "${ad.group}:${ad.module}:${ad.version}"
+                                        list += "${ad.name}"
                                     }
                                     td {
-                                        p("${a.group}:${a.module}:${a.version} (see also ${list})")
+                                        p("${a.identifier} (see also ${list})")
                                         p('Excluded duplicate classes')
                                         ul {
-                                            a.excludedDuplicatedClasses.each{ classname ->
+                                            a.excludedDuplicatedClasses.each { classname ->
                                                 li {
                                                     mkp.yield classname
                                                 }
@@ -181,118 +182,95 @@ class HTMLReporter {
                                     }
                                 }
                             }
-                            unused.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
+                            unused.findAll { it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
-                                    if(a.ignoreForAnalysis) {
+                                    if (a.ignoreForAnalysis) {
                                         td { span(class: 'info', "Not used (excluded)") }
                                     } else {
                                         td { span(class: 'error', "Not used") }
                                     }
-                                    td "${a.group}:${a.module}:${a.version}"
+                                    td "${a.name}"
                                 }
                             }
-                            unused.findAll { it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
+                            unused.findAll { it.duplicatedArtifacts.size() > 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'error', "Not used (duplicate classes)") }
-									String list = ''
-									a.duplicatedArtifacts.each { Artifact ad ->
-										list += list ? ';' : ''
-										list += "${ad.group}:${ad.module}:${ad.version}"
-									}
+                                    String list = ''
+                                    a.duplicatedArtifacts.each { AbstractAnalyzedDependency ad ->
+                                        list += list ? ';' : ''
+                                        list += "${ad.name}"
+                                    }
                                     td {
-										p("${a.group}:${a.module}:${a.version} (see also ${list})")
-										p('Duplicate classes')
-										ul {
-											a.duplicatedClasses.each{ classname ->
-												li {
-													mkp.yield classname
-												}
-											}
-										}
-									}
+                                        p("${a.identifier} (see also ${list})")
+                                        p('Duplicate classes')
+                                        ul {
+                                            a.duplicatedClasses.each { classname ->
+                                                li {
+                                                    mkp.yield classname
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
-                            usedTransitive.each {  Artifact a ->
-								tr {
-                                    if(a.ignoreForAnalysis) {
+                            usedTransitive.each { AbstractAnalyzedDependency a ->
+                                tr {
+                                    if (a.ignoreForAnalysis) {
                                         td { span(class: 'info', "Used, but from transitive dependencies (excluded)") }
                                     } else {
                                         td { span(class: 'warning', "Used, but from transitive dependencies") }
                                     }
-									td "${a.group}:${a.module}:${a.version}"
-								}
-							}
-                            unusedTranstive.each {  Artifact a ->
+                                    td "${a.name}"
+                                }
+                            }
+                            unusedTranstive.each { AbstractAnalyzedDependency a ->
                                 tr {
                                     td { span(class: 'warning', "Not used (transitive)") }
-                                    td "${a.group}:${a.module}:${a.version}"
+                                    td "${a.name}"
                                 }
                             }
 
-							used.findAll { it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
-								tr {
-									td {
-										span(class: 'info', "Used for '${a.configuration}'")
-									}
-									td {
-										mkp.yield "${a.group}:${a.module}:${a.version}"
-										ul {
-											a.usedClasses.each{ classname ->
-												li {
-													mkp.yield classname
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-
-					h2 "Dependency Classes"
-					table(id: "maintable") {
-						thead {
-							tr {
-								th 'Dependencies'
-								th 'Dependency classes / Project classes'
-							}
-						}
-
-						tbody {
-							used.findAll{ it.duplicatedArtifacts.size() == 0 }.each { Artifact a ->
-								tr {
-									td "${a.group}:${a.module}:${a.version}"
-									td {
-										ul {
-											a.usedClasses.each {String classname ->
-												li {
-													mkp.yield classname
-													ul {
-														projectArtifacts.each {ProjectArtifact pa ->
-															pa.getDependencyMap().each { prjClass, depSet ->
-																depSet.findAll { it == classname }.each {
-																	li prjClass
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-                            used.findAll{ it.duplicatedArtifacts.size() > 0 }.each { Artifact a ->
+                            used.findAll { it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
                                 tr {
-                                    td { span(class: 'error', "${a.module}:${a.version}") }
+                                    td {
+                                        span(class: 'info', "Used for '${a.configuration}'")
+                                    }
+                                    td {
+                                        mkp.yield "${a.name}"
+                                        ul {
+                                            a.usedClasses.each { classname ->
+                                                li {
+                                                    mkp.yield classname
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    h2 "Dependency Classes"
+                    table(id: "maintable") {
+                        thead {
+                            tr {
+                                th 'Dependencies'
+                                th 'Dependency classes / Project classes'
+                            }
+                        }
+
+                        tbody {
+                            used.findAll { it.duplicatedArtifacts.size() == 0 }.each { AbstractAnalyzedDependency a ->
+                                tr {
+                                    td "${a.name}"
                                     td {
                                         ul {
-                                            a.usedClasses.each {String classname ->
+                                            a.usedClasses.each { String classname ->
                                                 li {
                                                     mkp.yield classname
                                                     ul {
-                                                        projectArtifacts.each {ProjectArtifact pa ->
+                                                        projectArtifacts.each { AbstractAnalyzedDependency pa ->
                                                             pa.getDependencyMap().each { prjClass, depSet ->
                                                                 depSet.findAll { it == classname }.each {
                                                                     li prjClass
@@ -306,40 +284,64 @@ class HTMLReporter {
                                     }
                                 }
                             }
-						}
-					}
-					def props = getManifestProperties()
-					p(id: "footer") {
-						mkp.yield "created ${new Date()}"
-						if(props && props['Implementation-Title'] && props['Implementation-Version'] && props['Implementation-Vendor'] && props['Version-Of-OW2ASM']) {
-							mkp.yield " by ${props['Implementation-Title']} (${props['Implementation-Version']}) of ${props['Implementation-Vendor']} (OW2 ASM version: ${props['Version-Of-OW2ASM']})"
-						}
-					}
-				}
-			}
-			
-		}
-		writer.flush()
-	}
+                            used.findAll { it.duplicatedArtifacts.size() > 0 }.each { AbstractAnalyzedDependency a ->
+                                tr {
+                                    td { span(class: 'error', "${a.module}:${a.version}") }
+                                    td {
+                                        ul {
+                                            a.usedClasses.each { String classname ->
+                                                li {
+                                                    mkp.yield classname
+                                                    ul {
+                                                        projectArtifacts.each { AbstractAnalyzedDependency pa ->
+                                                            pa.getDependencyMap().each { prjClass, depSet ->
+                                                                depSet.findAll { it == classname }.each {
+                                                                    li prjClass
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    def props = getManifestProperties()
+                    p(id: "footer") {
+                        mkp.yield "created ${new Date()}"
+                        if (props && props['Implementation-Title'] && props['Implementation-Version'] && props['Implementation-Vendor'] && props['Version-Of-OW2ASM']) {
+                            mkp.yield " by ${props['Implementation-Title']} (${props['Implementation-Version']}) of ${props['Implementation-Vendor']} (OW2 ASM version: ${props['Version-Of-OW2ASM']})"
+                        }
+                    }
+                }
+            }
+
+        }
+        writer.flush()
+    }
 
     /**
      *
      * @return manifest properties
      */
-	private Properties getManifestProperties() {
-		String resource = "/" + this.getClass().getName().replace(".", "/") + ".class"
-		String fullPath = this.getClass().getResource(resource).toString()
-		String archivePath = fullPath.substring(0, fullPath.length() - resource.length())
-		
-		try {
-			InputStream is = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()
-			if (is != null) {
-				Properties properties = new Properties()
-				properties.load(is)
-				return properties
-			}
-		}
-		catch (IOException e) {}
-		return null
-	}
+    private Properties getManifestProperties() {
+        String resource = "/" + this.getClass().getName().replace(".", "/") + ".class"
+        String fullPath = this.getClass().getResource(resource).toString()
+        String archivePath = fullPath.substring(0, fullPath.length() - resource.length())
+
+        try {
+            InputStream is = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()
+            if (is != null) {
+                Properties properties = new Properties()
+                properties.load(is)
+                return properties
+            }
+        }
+        catch (IOException e) {
+        }
+        return null
+    }
 }
