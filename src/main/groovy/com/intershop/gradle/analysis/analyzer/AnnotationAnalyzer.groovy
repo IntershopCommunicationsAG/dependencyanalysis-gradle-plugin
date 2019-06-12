@@ -25,14 +25,30 @@ import org.objectweb.asm.signature.SignatureVisitor
 @CompileStatic
 @Slf4j
 class AnnotationAnalyzer extends AnnotationVisitor {
-	
+
+    private final ClassNameCollector cc;
+
     AnnotationAnalyzer(ClassNameCollector cc, String desc, boolean visible) {
         super(Opcodes.ASM5)
-		if(desc) {
+		this.cc = cc
+        if(desc) {
 			cc.addDesc(desc)
 		}
     }
-	/**
+
+    @Override
+    void visit(String name, Object value) {
+        if(value instanceof org.objectweb.asm.Type) {
+            cc.addName(value.className)
+        }
+    }
+
+    @Override
+    AnnotationVisitor visitArray(String name) {
+        return this;
+    }
+
+    /**
      * Class analyzer
      * Identifies also annotation dependencies
      */
